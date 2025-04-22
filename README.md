@@ -2,32 +2,36 @@
 
 ### Provide Project / Asset Overview 
 
-Provide details like description of the assets, the goal of the project, how long it would take to set up. Also highlight any top considerations a user should keep in mind as they implement these assets within their environment.
+Enhance incident management and resolution by developing a conversational Incident Co-pilot. The solution will automatically generate step-by-step resolution playbooks for common incidents, leveraging historical data and industry best practices to suggest corrective actions or next best steps. It will also trigger predefined workflows to accelerate response times.
+In the long term, the goal is to align with TMF standards, driving consistency, while enabling system-assisted, human-led network automation for more efficient and intelligent operations.
 
 ### Squad
 
 **CE AI Engineers:**
+Anitha M
+Denis Askin
+Keshav Gaur
+Nayef Abou Tayoun
+Reethu Thomas
+Vivek Rathi
 
 **CE Designers:**
-
+Smeet Yeolekar
 **Platform Engineer:**
 
 **Solution Architect:**
 
 **CE Business Technology Leaders:**
-
+Nandita Patyal
 **CE Manager:**
-
+Sprios Mavromihelakis
 
 ### Industry 
+Telco
+**Industry:** Telco
 
-Provide information on industry & market segment of the client that this use case was designed for:
+**Market:** Canada
 
-**Industry:** US Public
-
-**Market:** [SLED, HCLS]
-
-**Market Segment:** [Education, government, HC payer, HC provider, life sciences]
 
 ----
 
