@@ -1,4 +1,4 @@
-# BM Watson Orchestrate API Client
+# IBM Watson Orchestrate API Client
 
 ## Overview
 
