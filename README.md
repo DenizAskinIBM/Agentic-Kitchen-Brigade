@@ -62,8 +62,8 @@ Provide a quick technical overview of the technical component - the technologies
 ----
 # Architecture 
 
-Add architecture details/diagram.
-
+![Architectural Diagram](architecture/Incident Management Copilot Architect.png)
+![Architectural Diagram](architecture/DownDetectorFlow.png)
 ----
 # Setup Guide
 
