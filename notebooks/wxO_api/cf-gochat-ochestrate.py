@@ -39,7 +39,7 @@ def get_bearer_token(api_key):
 def invoke_orchestrate_skill():
     token = get_bearer_token(API_KEY)
     if not token:
-        return "⚠️ Unable to authenticate with Watson Orchestrate."
+        return "Unable to authenticate with Watson Orchestrate."
 
     headers = {
         "Content-Type": "application/json",
@@ -55,7 +55,7 @@ def invoke_orchestrate_skill():
     if response.status_code == 200:
         return response.json().get("generated_text", "No output from skill.")
     else:
-        return f"⚠️ Orchestrate call failed: {response.status_code}"
+        return f"Orchestrate call failed: {response.status_code}"
 
 # === MAIN ENTRY POINT ===
 @functions_framework.http
