@@ -6,14 +6,10 @@ import flask
 import functions_framework
 
 # === CONFIGURATION ===
-API_KEY = "azE6dXNyXzRlZDk4MDg2LTQ0NWItM2FlZS1iOTEzLTA1MTE4NDViMmUxNzplREJzRUVib3hOaHN1NFhqNFBtWDhGMDJ6UjNQSzhtTEFEd0QyRUo3Nlh3PTovY2kr"  # Replace with your Orchestrate API key
+API_KEY = "azE6dXNyXzRlZDk4MDg2LTQ0NWItM2FlZS1iOTEzLTA1MTE4NDViMmUxNzplREJzRUVib3hOaHN1NFhqNFBtWDhGMDJ6UjNQSzhtTEFEd0QyRUo3Nlh3PTovY2kr"
 TOKEN = None
 TOKEN_EXPIRATION = 0
 ORCHESTRATE_URL = "https://api.dl.watson-orchestrate.ibm.com:443/instances/20250212-1521-3150-30c9-e789cad9cae1/v1/skills/_personal_/trial-generative__latest__add_1/prompts/add_1/generation/text"
-
-# === COMMANDS ===
-ABOUT_COMMAND_ID = 1
-HELP_COMMAND_ID = 2
 
 # === TOKEN MANAGEMENT ===
 def is_token_expired(expiration_time):
@@ -29,14 +25,13 @@ def get_bearer_token(api_key):
     if response.status_code == 200:
         data = response.json()
         TOKEN = data.get("token")
-        TOKEN_EXPIRATION = int(time.time()) + data.get("expires_in", 3600)
         return TOKEN
     else:
-        print("Token request failed:", response.text)
+        print(f"Failed to retrieve token, status code: {response.status_code}")
         return None
 
 # === ORCHESTRATE CALL ===
-def invoke_orchestrate_skill():
+def invoke_orchestrate_skill(n1, n2):
     token = get_bearer_token(API_KEY)
     if not token:
         return "Unable to authenticate with Watson Orchestrate."
@@ -46,8 +41,8 @@ def invoke_orchestrate_skill():
         "Authorization": f"Bearer {token}"
     }
     payload = {
-        "n1": "2",
-        "n2": "3",
+        "n1": str(n1),
+        "n2": str(n2),
         "output1": " "
     }
 
@@ -70,7 +65,7 @@ def avatar_app(req: flask.Request) -> Mapping[str, Any]:
     user_name = user.get("displayName", "Unknown")
 
     if event_type == "ADDED_TO_SPACE":
-        return {"text": f"Hello {user_name}, thanks for adding me!"}
+        return {"text": f"Hello {user_name}, thanks for adding me."}
 
     if "appCommandMetadata" in event:
         return handle_app_commands(event)
@@ -87,9 +82,13 @@ def handle_regular_message(event: Mapping[str, Any]) -> Mapping[str, Any]:
     user_name = user.get("displayName", "Unknown User")
 
     ticket_numbers = extract_ticket_number(message_text)
-    if ticket_numbers:
+    n1_match = re.search(r'n1\s*=\s*(-?\d+)', message_text)
+    n2_match = re.search(r'n2\s*=\s*(-?\d+)', message_text)
+
+    if ticket_numbers and n1_match and n2_match:
         ticket_number = ticket_numbers[0]
-        orchestrate_output = invoke_orchestrate_skill() or "No output from Watson Orchestrate."
+        n1, n2 = n1_match.group(1), n2_match.group(1)
+        orchestrate_output = invoke_orchestrate_skill(n1, n2) or "No output from Watson Orchestrate."
 
         return {
             "text": f"Ticket {ticket_number}: {orchestrate_output}",
@@ -102,15 +101,16 @@ def handle_regular_message(event: Mapping[str, Any]) -> Mapping[str, Any]:
                     },
                     "sections": [{
                         "widgets": [
-                            {"textParagraph": {"text": f"*Ticket ID:* {ticket_number}"}},
-                            {"textParagraph": {"text": f"*Watson Orchestrate Output:* {orchestrate_output}"}}
+                            {"textParagraph": {"text": f"Ticket ID: {ticket_number}"}},
+                            {"textParagraph": {"text": f"n1: {n1}, n2: {n2}"}},
+                            {"textParagraph": {"text": f"Watson Orchestrate Output: {orchestrate_output}"}}
                         ]
                     }]
                 }
             }]
         }
 
-    return {"text": "No valid ticket number found. Use format A1234 or B5678."}
+    return {"text": "Please include a valid ticket (e.g., A1234) and values in the format: n1=... n2=..."}
 
 # === HELPERS ===
 def extract_ticket_number(sentence: str):
@@ -119,8 +119,8 @@ def extract_ticket_number(sentence: str):
 def handle_app_commands(event: Mapping[str, Any]) -> Mapping[str, Any]:
     cmd_id = event["appCommandMetadata"]["appCommandId"]
     user = event.get("user", {}).get("displayName", "User")
-    if cmd_id == ABOUT_COMMAND_ID:
-        return {"text": f"Avatar Bot is active. Hello, {user}!"}
-    elif cmd_id == HELP_COMMAND_ID:
-        return {"text": "Try typing a ticket like 'B0123' to get a summary with Watson Orchestrate help."}
+    if cmd_id == 1:
+        return {"text": f"Avatar Bot is active. Hello, {user}."}
+    elif cmd_id == 2:
+        return {"text": "Try typing a message like: A1234 n1=5 n2=10"}
     return {"text": "Unknown command received."}
