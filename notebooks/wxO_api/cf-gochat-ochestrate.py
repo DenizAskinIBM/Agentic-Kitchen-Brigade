@@ -110,7 +110,7 @@ def handle_regular_message(event: Mapping[str, Any]) -> Mapping[str, Any]:
             }]
         }
 
-    return {"text": "❗ No valid ticket number found. Use format A1234 or B5678."}
+    return {"text": "No valid ticket number found. Use format A1234 or B5678."}
 
 # === HELPERS ===
 def extract_ticket_number(sentence: str):
