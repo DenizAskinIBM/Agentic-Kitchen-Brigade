@@ -1,3 +1,8 @@
 {
-    "wcaForGP.enable": true
+    "wcaForGP.enable": true,
+    "workbench.colorCustomizations": {
+        "activityBar.background": "#173325",
+        "titleBar.activeBackground": "#204834",
+        "titleBar.activeForeground": "#F8FCFA"
+    }
 }
