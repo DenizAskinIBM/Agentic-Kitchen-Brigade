@@ -1,0 +1,11 @@
+# requirements.txt
+
+langgraph>=0.1.0
+python-dotenv>=1.0.0
+datasets>=2.0.0
+sentence-transformers>=2.2.2
+faiss-cpu>=1.7.4
+openai>=0.27.0
+ibm-watsonx-ai>=1.0.0           # correct Watsonx.ai SDK  [oai_citation:1‡IBM](https://ibm.github.io/watsonx-ai-python-sdk/install.html?utm_source=chatgpt.com)
+torch>=1.13.0                   # required by sentence-transformers
+transformers>=4.28.0            # often pulled in alongside sentence-transformers
