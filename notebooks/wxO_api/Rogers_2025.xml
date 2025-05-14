@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Downdetector Dashboard feed</title><link>https://enterprise.downdetector.com/</link><description>User RSS feed for selected company</description><atom:link href="https://enterprise.downdetector.com/events/8qPWVlZzgnA5pcIqdlTssrMQLk1yJbJU/656:972-31306.xml" rel="self"/><language>en-us</language><lastBuildDate>Wed, 07 May 2025 00:19:28 +0000</lastBuildDate><item><title>Problems at Rogers (CA)</title><link>https://enterprise.downdetector.com/#/service/31306</link><description>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Downdetector Dashboard feed</title><link>https://enterprise.downdetector.com/</link><description>User RSS feed for selected company</description><atom:link href="https://enterprise.downdetector.com/events/8qPWVlZzgnA5pcIqdlTssrMQLk1yJbJU/656:972-31306.xml" rel="self"/><language>en-us</language><lastBuildDate>Tue, 13 May 2025 19:26:18 +0000</lastBuildDate><item><title>Problems at Rogers (CA)</title><link>https://enterprise.downdetector.com/#/service/31306</link><description>
+Current: 356
+Normal: 350
+Custom threshold: [350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350]
+</description><pubDate>Tue, 13 May 2025 19:26:18 +0000</pubDate><guid>10288612</guid></item><item><title>Problems at Rogers (CA)</title><link>https://enterprise.downdetector.com/#/service/31306</link><description>
 Current: 364
 Normal: 350
 Custom threshold: [350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350]
@@ -195,8 +199,4 @@ Custom threshold: [350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 3
 Current: 175
 Normal: 150
 Custom threshold: [350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350]
-</description><pubDate>Fri, 21 Mar 2025 14:21:30 +0000</pubDate><guid>10028618</guid></item><item><title>Problems at Rogers (CA)</title><link>https://enterprise.downdetector.com/#/service/31306</link><description>
-Current: 158
-Normal: 150
-Custom threshold: [350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350, 350]
-</description><pubDate>Fri, 21 Mar 2025 13:51:25 +0000</pubDate><guid>10028509</guid></item></channel></rss>
+</description><pubDate>Fri, 21 Mar 2025 14:21:30 +0000</pubDate><guid>10028618</guid></item></channel></rss>
