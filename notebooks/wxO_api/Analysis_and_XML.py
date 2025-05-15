@@ -12,15 +12,21 @@ import matplotlib.pyplot as plt
 from pptx import Presentation
 from pptx.util import Inches
 
+import warnings
+from pandas.errors import PerformanceWarning
+warnings.filterwarnings("ignore", category=PerformanceWarning)
+
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
+from sklearn.feature_selection import RFECV
 from sklearn.preprocessing import (
     FunctionTransformer,
     OneHotEncoder,
@@ -34,6 +40,12 @@ from sklearn.metrics import (
     classification_report,
     confusion_matrix,
 )
+
+from sklearn.ensemble import RandomForestClassifier
+from imblearn.over_sampling import SMOTE
+
+# For synthetic incident simulation
+from scipy.stats import ks_2samp
 
 # ----------------------------------------------------------------------
 # 1.  Load CSV Datasets
@@ -79,6 +91,14 @@ df_rogers = _load_csv("rogers.csv",     "ROGERS")
 df_bell   = _load_csv("bell_data.csv",  " BELL")
 df_telus  = _load_csv("telus.csv",      "TELUS")
 
+# Print distribution of verified vs unverified in each CSV before analysis
+print("\nCSV Incidence Distribution (pre-analysis):")
+for provider, df in (("BELL", df_bell), ("ROGERS", df_rogers), ("TELUS", df_telus)):
+    total = len(df)
+    pos = df["verified"].astype(str).str.upper().eq("TRUE").sum() if "verified" in df.columns else 0
+    neg = total - pos
+    print(f"  {provider}: Total={total}, Positive={pos}, Negative={neg}")
+
 CSV_MAPPING = {
     "BELL":   ("bell_data.csv", df_bell),
     "ROGERS": ("rogers.csv",    df_rogers),
@@ -103,8 +123,17 @@ def _print_verified(df: pd.DataFrame, provider: str) -> None:
 # for d, p in ((df_rogers, "ROGERS"), (df_bell, "BELL"), (df_telus, "TELUS")):
 #     _print_verified(d, p)
 
-feature_cols = ["cluster_size"]
-numeric_cols = ["cluster_size"]
+feature_cols = [
+    "timestamp",
+    "cluster_size",
+    "cluster_frequency",
+    "inter_arrival",
+    "count_1h",
+    "hour",
+    "weekday",
+    "count_1h_z"
+]
+numeric_cols = feature_cols.copy()
 
 def _to_numeric(data):
     df_num = pd.DataFrame(data).apply(pd.to_numeric, errors="coerce")
@@ -123,15 +152,23 @@ preprocessor = ColumnTransformer(
 
 ## Uncomment if you want to try different classifiers
 classifiers = {
-    # "DecisionTree": DecisionTreeClassifier(random_state=42, class_weight="balanced"),
-    # "ExtraTrees":   ExtraTreesClassifier(n_estimators=100, random_state=42, class_weight="balanced"),
-    "RandomForest": RandomForestClassifier(n_estimators=300, random_state=42, class_weight="balanced"),
+    "RandomForest": RandomForestClassifier(n_estimators=300, random_state=42, class_weight="balanced")
 }
 
-pipelines = {
-    name: Pipeline([("prep", preprocessor), ("clf", clf)])
-    for name, clf in classifiers.items()
-}
+pipelines = {}
+for name, clf in classifiers.items():
+    pipelines[name] = Pipeline([
+        ("prep", preprocessor),
+        ("rfe", RFECV(
+            estimator=clf,
+            step=1,
+            cv=3,
+            scoring="balanced_accuracy",
+            min_features_to_select=5,
+            n_jobs=-1
+        )),
+        ("clf", clf)
+    ])
 
 # XML paths
 XML_FILES = {
@@ -201,21 +238,107 @@ def xml_to_rows(xml_path: Path, provider: str) -> pd.DataFrame:
     # filter after computing normalized values and likelihood
     mask = df_xml["ratioIncidents"] >= 1
     df_xml = df_xml[mask].copy()
-    return df_xml[["cluster_size","cluster_size_orig","likelihood","ratio_norm","cluster_frequency"]]
+
+    # Additional feature engineering for XML stage
+    # cluster frequency calculation (reports per day)
+    df_xml["date"] = pd.to_datetime(df_xml["timestamp"], unit='s').dt.floor('d')
+    days = df_xml.groupby("cluster_id")["date"].transform("nunique").replace(0,1)
+    df_xml["cluster_frequency"] = df_xml["cluster_size"] / days
+
+    # inter-arrival time (in seconds)
+    df_xml = df_xml.sort_values("timestamp")
+    df_xml["inter_arrival"] = df_xml["timestamp"].diff().fillna(df_xml["timestamp"].median())
+
+    # moving-window count: complaints in past 1 hour
+    df_xml["datetime"] = pd.to_datetime(df_xml["timestamp"], unit='s')
+    df_xml.set_index("datetime", inplace=True)
+    df_xml["count_1h"] = df_xml["timestamp"].rolling("1h").count().astype(int)
+    df_xml.reset_index(drop=False, inplace=True)
+
+    df_xml["datetime_ts"] = pd.to_datetime(df_xml["timestamp"], unit='s')
+    df_xml["hour"] = df_xml["datetime_ts"].dt.hour
+    df_xml["weekday"] = df_xml["datetime_ts"].dt.weekday
+    df_xml["count_1h_z"] = (df_xml["count_1h"] - df_xml["count_1h"].mean()) / df_xml["count_1h"].std(ddof=0)
+
+    return df_xml[["cluster_id", "cluster_size", "cluster_size_orig", "likelihood", "ratio_norm", "cluster_frequency", "inter_arrival", "count_1h", "hour", "weekday", "count_1h_z", "timestamp"]]
 
 # ----------------------------------------------------------------------
 # 5.  Per-provider processing
 # ----------------------------------------------------------------------
 for prov, (_csv, df) in CSV_MAPPING.items():
     print(f"\n============================================================ Processing {prov} ============================================================")
-    # clustering
+    # clustering for CSV stage
+    df = df.copy()
+    # Record all CSV columns to use as raw features (exclude target 'verified')
+    csv_feature_cols = [col for col in df.columns if col.lower() != "verified"]
+
+    # Synthetic positive-incident augmentation via compound Poisson simulation
+    # Determine how many positives to generate to balance classes
+    real_pos = df[df["verified"].str.upper() == "TRUE"]
+    real_neg = df[df["verified"].str.upper() != "TRUE"]
+    n_real_pos = len(real_pos)
+    n_real_neg = len(real_neg)
+    # only generate 30% of the gap
+    n_synth = max(0, int((n_real_neg - n_real_pos) * 0.6))
+    if n_synth > 0 and n_real_pos > 1:
+        print(f"[SYNTH] {prov} before augmentation: Positive={n_real_pos}, Negative={n_real_neg}")
+        # Estimate interarrival time (in seconds) from real positives
+        pos_ts = np.sort(real_pos["timestamp"].values)
+        inter_times = np.diff(pos_ts)
+        mean_inter = inter_times.mean()
+        # Generate synthetic interarrival times and cumulative timestamps
+        synth_inter = np.random.exponential(scale=mean_inter, size=n_synth)
+        start_time = np.random.choice(pos_ts)
+        synth_ts = np.cumsum(np.insert(synth_inter, 0, start_time))
+        # Keep synthetic timestamps within the real data span
+        min_ts, max_ts = pos_ts.min(), pos_ts.max()
+        synth_ts = np.clip(synth_ts, min_ts, max_ts)
+        # Create synthetic rows
+        synth_df = pd.DataFrame({
+            **{col: np.nan for col in df.columns if col not in ["timestamp", "verified"]},
+            "timestamp": synth_ts,
+            "verified": "TRUE"
+        })
+        df = pd.concat([df, synth_df], ignore_index=True)
+        new_pos = df["verified"].astype(str).str.upper().eq("TRUE").sum()
+        new_neg = len(df) - new_pos
+        print(f"[SYNTH] {prov} after augmentation: Positive={new_pos}, Negative={new_neg} (added {n_synth} synthetic positives)")
+        # Quality metric: KS test between real and synthetic interarrival
+        ks_stat, ks_p = ks_2samp(inter_times, synth_inter)
+        print(f"[SYNTH] KS-test statistic={ks_stat:.3f}, p-value={ks_p:.3f}")
+
+    # DBSCAN on timestamp to get clusters
     filled_ts = df["timestamp"].fillna(df["timestamp"].median())
     db = DBSCAN(eps=3600, min_samples=3)
     ids = db.fit_predict(filled_ts.values.reshape(-1,1))
-    df = df.copy()
     df["cluster_id"] = ids
+    # cluster size
     sizes = pd.Series(ids).value_counts().to_dict()
     df["cluster_size"] = df["cluster_id"].map(sizes).fillna(0).astype(int)
+    # cluster frequency: reports per day
+    df["date"] = pd.to_datetime(df["timestamp"], unit='s').dt.floor('d')
+    days = df.groupby("cluster_id")["date"].transform("nunique").replace(0,1)
+    df["cluster_frequency"] = df["cluster_size"] / days
+
+    # inter-arrival time (in seconds)
+    df = df.sort_values("timestamp")
+    df["inter_arrival"] = df["timestamp"].diff().fillna(df["timestamp"].median())
+
+    # moving-window count: complaints in past 1 hour
+    df["datetime"] = pd.to_datetime(df["timestamp"], unit='s')
+    df.set_index("datetime", inplace=True)
+    df["count_1h"] = df["timestamp"].rolling("1h").count().astype(int)
+    df.reset_index(drop=False, inplace=True)
+
+    # time-of-day and day-of-week features
+    df["datetime_ts"] = pd.to_datetime(df["timestamp"], unit='s')
+    df["hour"] = df["datetime_ts"].dt.hour
+    df["weekday"] = df["datetime_ts"].dt.weekday
+    # Z-score normalize 1h count
+    df["count_1h_z"] = (df["count_1h"] - df["count_1h"].mean()) / df["count_1h"].std(ddof=0)
+    # Defragment DataFrame to improve performance
+    df = df.copy()
+
     # normalize bias
     rmin, rmax = df["ratioIncidents"].min(), df["ratioIncidents"].max()
     if rmax>rmin:
@@ -226,13 +349,67 @@ for prov, (_csv, df) in CSV_MAPPING.items():
     df["cluster_size"] = df["cluster_size"] + df["bias"]
     y = df["verified"].astype(str).str.upper().eq("TRUE").astype(int)
     X = df[feature_cols].copy()
-    X_tr, X_te, y_tr, y_te = train_test_split(X,y,test_size=0.2,random_state=42,stratify=y)
+
+    # --- Stage 1: Raw CSV Features Evaluation ---
+    # Use only a specific subset of CSV features for Stage 1
+    raw_features = [
+        "user/totalTweets",
+        "user/totalFollowers",
+        "user/totalFollowing",
+        "user/totalLikes",
+        "id",
+        "timestamp",
+        "likes",
+        "replies",
+        "retweets",
+        "quotes"
+    ]
+    print(f"Raw CSV features used ({len(raw_features)}): {raw_features}")
+    # Convert raw features to numeric, coercing errors and filling NaNs with 0
+    X_raw = df[raw_features].apply(pd.to_numeric, errors='coerce').fillna(0)
+    y_raw = y  # same target
+    # Split and apply SMOTE to raw features
+    Xr_train, Xr_te, yr_train, yr_te = train_test_split(X_raw, y_raw, test_size=0.2, random_state=42, stratify=y_raw)
+    sm_raw = SMOTE(random_state=42)
+    Xr_tr_bal, yr_tr_bal = sm_raw.fit_resample(Xr_train, yr_train)
+    # Train calibrated Random Forest on balanced raw features
+    base_raw = RandomForestClassifier(n_estimators=300, random_state=42, class_weight="balanced")
+    clf_raw = CalibratedClassifierCV(estimator=base_raw, cv=3)
+    clf_raw.fit(Xr_tr_bal, yr_tr_bal)
+    acc_raw = clf_raw.score(Xr_te, yr_te)
+    bal_raw = balanced_accuracy_score(yr_te, clf_raw.predict(Xr_te))
+    print("\n--- Stage 1: Raw CSV Features ---")
+    print(f"Raw features test accuracy : {acc_raw:.3f}")
+    print(f"Raw features balanced accuracy : {bal_raw:.3f}")
+    print(classification_report(yr_te, clf_raw.predict(Xr_te), digits=3, zero_division=0))
+    # Compute and print average predicted probability for the positive class
+    raw_probs = clf_raw.predict_proba(Xr_te)[:, 1]
+    print(f"Average predicted probability (positive class): {raw_probs.mean():.3f}")
+
+    # --- Stage 1: Raw CSV Feature Importances ---
+    print("\nTop 20 important raw CSV features:")
+    # Train a separate RF on the balanced raw data for importances
+    rf_imp_raw = RandomForestClassifier(n_estimators=300, random_state=42, class_weight="balanced")
+    rf_imp_raw.fit(Xr_tr_bal, yr_tr_bal)
+    importances_raw = rf_imp_raw.feature_importances_
+    feat_imp_raw = sorted(zip(raw_features, importances_raw), key=lambda x: x[1], reverse=True)[:20]
+    for feat, imp in feat_imp_raw:
+        print(f"  {feat}: {imp:.4f}")
+
+    # --- Stage 2: Existing pipeline (SMOTE/RFECV etc) ---
+    X_train_raw, X_te, y_train_raw, y_te = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+    sm = SMOTE(random_state=42)
+    X_tr, y_tr = sm.fit_resample(X_train_raw, y_train_raw)
     for name, pipe in pipelines.items():
         print(f"\n----- Model: {name} -----")
         pipe.fit(X_tr, y_tr)
-        # if hasattr(pipe.named_steps["clf"], "feature_importances_"):
-        #     imp = pipe.named_steps["clf"].feature_importances_
-        #     print("Feature importances:", dict(zip(feature_cols, imp)))
+        if name == "RandomForest":
+            # Feature importances for engineered features
+            importances_eng = pipe.named_steps["clf"].feature_importances_
+            feat_imp_eng = sorted(zip(feature_cols, importances_eng), key=lambda x: x[1], reverse=True)[:20]
+            print("\nTop 20 important engineered features:")
+            for feat, imp in feat_imp_eng:
+                print(f"  {feat}: {imp:.4f}")
         acc = pipe.score(X_te, y_te)
         print(f"Test accuracy : {acc:.3f}")
         bal = balanced_accuracy_score(y_te, pipe.predict(X_te))
@@ -245,9 +422,19 @@ for prov, (_csv, df) in CSV_MAPPING.items():
     if df_xml.empty:
         print(f"{prov}: no qualifying rows.")
         continue
+    # Compute offset to renumber clusters starting from 1
+    min_id = df_xml["cluster_id"].min()
+    offset = 1 - min_id
+    # Print cluster_size and cluster_frequency for each cluster
+    print("\nCluster summary:")
+    for cid, group in df_xml.groupby("cluster_id"):
+        new_id = cid + offset
+        size = group["cluster_size"].iloc[0]
+        freq = group["cluster_frequency"].iloc[0]
+        print(f"  Cluster {new_id}: size={size}, frequency={freq:.2f}")
     rf = pipelines["RandomForest"]
-    preds = rf.predict(df_xml)
-    probs = rf.predict_proba(df_xml)[:,1]
+    preds = rf.predict(df_xml[feature_cols])
+    probs = rf.predict_proba(df_xml[feature_cols])[:,1]
     alpha = 0.5
     combined = alpha*probs + (1-alpha)*df_xml["ratio_norm"].values
     maxc = combined.max()
