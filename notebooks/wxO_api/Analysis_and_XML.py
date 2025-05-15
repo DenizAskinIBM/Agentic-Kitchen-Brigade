@@ -184,6 +184,10 @@ def xml_to_rows(xml_path: Path, provider: str) -> pd.DataFrame:
     sizes = pd.Series(ids).value_counts().to_dict()
     df_xml["cluster_size"] = df_xml["cluster_id"].map(sizes).fillna(0).astype(int)
     df_xml["cluster_size_orig"] = df_xml["cluster_size"]
+    # New logic: compute cluster_frequency
+    df_xml["date"] = pd.to_datetime(df_xml["timestamp"], unit='s').dt.strftime('%Y-%m-%d')
+    unique_days = df_xml.groupby("cluster_id")["date"].nunique()
+    df_xml["cluster_frequency"] = df_xml["cluster_id"].map(lambda x: df_xml["cluster_size"].iloc[0] / unique_days.get(x, 1) if unique_days.get(x, 1) > 0 else 0)
     # extract ratio
     cur_norm = df_xml["description"].apply(_extract_cur_norm)
     df_xml[["currentIncidents","normalIncidents"]] = pd.DataFrame(cur_norm.tolist(), index=df_xml.index)
@@ -197,7 +201,7 @@ def xml_to_rows(xml_path: Path, provider: str) -> pd.DataFrame:
     # filter after computing normalized values and likelihood
     mask = df_xml["ratioIncidents"] >= 1
     df_xml = df_xml[mask].copy()
-    return df_xml[["cluster_size","cluster_size_orig","likelihood","ratio_norm"]]
+    return df_xml[["cluster_size","cluster_size_orig","likelihood","ratio_norm","cluster_frequency"]]
 
 # ----------------------------------------------------------------------
 # 5.  Per-provider processing
@@ -255,6 +259,7 @@ for prov, (_csv, df) in CSV_MAPPING.items():
     print(f"  [Sample cluster_size]      {sample['cluster_size']}")
     print(f"  [Sample likelihood]        {sample['likelihood']}")
     print(f"  [Sample ratio_norm]        {sample['ratio_norm']:.6f}")
+    print(f"  [Sample cluster_frequency]  {sample['cluster_frequency']:.2f}")
 
 
 # ----------------------------------------------------------------------
