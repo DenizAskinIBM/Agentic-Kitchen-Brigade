@@ -1,0 +1,1357 @@
+question,answer,context
+"What CLI command do you use to configure the system hostname, timezone, and NTP servers?","Answer:
+set system host-name <hostname>
+set system time-zone <zone>
+set system ntp server <ntp-server-ip-addr>","set system host-name  <CLLI> set system time-zone  <time-zone>
+
+set system ntp boot-server <ntp-server-ip-addr> set system ntp server <ntp-server-ip-addr> set system ntp source-address <loopback0_ip_address>
+
+set system syslog console any alert
+set system syslog console pfe error
+set system syslog user * any emergency
+set system syslog host <syslog_ip_address> any info
+set system syslog host <syslog_ip_address> facility-override local7
+*/update since version
+1.1
+set system syslog host <syslog_ip_address> log-prefix <CLLI>
+*/hostname
+set system syslog source-address <loopback0_ip_address>
+set system syslog file messages any info */local syslog
+set system syslog file messages change-log any
+set system syslog file interactive-commands interactive-commands any
+set system syslog file default-log-messages any any
+set system syslog file default-log-messages structured-data
+set system syslog file local-syslog authorization info
+set system syslog file messages authorization info
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set system name-server</COLOR></COLOR>  <dns1_ip_address>   # dns currently not in use, optional set system name-server  <dns2_ip_address>
+
+*/  optional - when this command is being enable, console will no longer be accessible and used with caution !!
+** set system ports console disable
+
+# this prefix-list can be shared between CP *& UP export policy set policy-options prefix-list HUAWEI-X2-LBS HUAWEI-eNB-LOOPBACK-IP/32
+
+set system tacplus-server  <tacas1_ip_address>  secret  <key> set system tacplus-server  <tacas1_ip_address>  timeout 10 set system tacplus-server  <tacas1_ip_address>  source-address <loopback0_ip_address> set system tacplus-server  <tacas2_ip_address> secret  <key> set system tacplus-server  <tacas2_ip_address> timeout 10 set system tacplus-server  <tacas2_ip_address>  source-address <loopback0_ip_address> set system authentication-order tacplus set system authentication-order password
+
+*/ Enter to configuration mode, type top <enter> to system configuration top level
+*/ for root and super-user account, please enter plain text password first time, or alternatively the system generated encrypted password
+set system root-authentication encrypted-password ""<secret>""; ## SECRET-DATA
+set system login user remote  uid 2000
+set system login user remote  class REMOTE
+set system login class REMOTE idle-timeout 15   */ to enable remote user login using tacacs with
+
+set system login class REMOTE permissions all
+set system login class admin-local idle-timeout 15
+*/create super-user access with timeout session
+set system login class admin-local permissions all
+set system login user <admin>  uid 2001
+set system login user <admin>  class admin-local
+set system login user <admin>  encrypted-password ""<secret>""; ## SECRET-DATA
+set system ports console log-out-on-disconnect    */console setting logout after disconnect console
+TELUS Communications Inc.
+
+set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term A from protocol direct set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term A then as-path-prepend ""6xxxx 6xxxx 6xxxx 6xxxx""
+set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term A then accept set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term B from protocol static set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term B then as-path-prepend ""6xxxx 6xxxx 6xxxx 6xxxx""
+set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term B then accept set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm then default-action reject
+
+set protocols bgp group csr-global-v6 description ""global csr layer""
+set protocols bgp group csr-global-v6  type external
+set protocols bgp group csr-global-v6  family inet6 unicast
+set protocols bgp group csr-global-v6  hold-time 45
+set protocols bgp group csr-global-v6  authentication-key  <secret>
+set protocols bgp group csr-global-v6  peer-as 852
+set protocols bgp group csr-global-v6  local-as <local AS#>
+defined, this line  can be skipped
+
+*/ '/n' is newline command set system login announcement ""\nlogin message start here "" <COLOR=(0,176,80)>set system login message "" Hub site router information""</COLOR>
+
+set protocols bgp group csr-global description ""global csr layer""
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set protocols bgp group csr-global type external</COLOR></COLOR>
+set protocols bgp group csr-global family inet unicast
+set protocols bgp group csr-global hold-time 45
+set protocols bgp group csr-global authentication-key  <secret>
+set protocols bgp group csr-global peer-as 852
+set protocols bgp group csr-global local-as <local AS#>   */ if autonomous-system being defined, this line  can
+
+set  protocols bgp group sat-ipv4 type external
+set  protocols bgp group sat-ipv4 family inet unicast
+set  protocols bgp group sat-ipv4 peer-as 6xxxx
+set  protocols bgp group sat-ipv4 neighbor <PEER-IP> description ""to SAT  TM-RAN""
+set  protocols bgp group sat-ipv4 neighbor <PEER-IP> hold-time 45
+set  protocols bgp group sat-ipv4 neighbor <PEER-IP> log-updown
+set  protocols bgp group sat-ipv4 neighbor <PEER-IP> import IMPORT-LP60-NO-EXP
+set  protocols bgp group sat-ipv4 neighbor <PEER-IP> export exp-sat-TM-RAN
+
+1.0, Issue Date = October 31, 2023. 1.0, Notes = Initial issue for review. 1.1, Issue Date = December 7, 2023. 1.1, Notes = Update syslog facility override parameters Update tacacs timeout to 10 sec DNS setup as optional (currently not in use)
+The most current version of this document can be found here:
+https://drive.google.com/drive/folders/1Q1Quzq_OE9PkCQkcZRtlztLhYjv_b3I4
+Filename: CSR-ACX7024-configuration-v(latest version)
+Data-IP Master Sparing Guidelines (TELUS Internal)
+https://sharepoint.tsl.telus.com/sites/tsbse/Operational%20Docs/Forms/AllItems.aspx?id=%2Fsites%2Fts bse%2FOperational%20Docs%2FSparing%2FData%2DIP%5FNetwork%5FSparing
+Filename:  UC_Juniper CSR ACX7024 Sparing.xls
+
+Abstract: This  document  presents  the  technical  description  of  software configuration  on  Juniper  ACX7024  CSR  and  to  be  deployed  on  TELUS Mobility RAN IP backhaul project.
+Author
+Ricky Ip
+Last Revised Date
+January 11, 2024
+Issue
+1.1
+The  information  herein  is  TELUS  Communications  Inc.  confidential  and  proprietary.    Any review, distribution or other use of this information outside of one's scope of employment with TELUS is strictly prohibited.  TELUS Communications Inc. will avail itself of all legal rights and remedies in protecting the confidentiality, property rights, and use of the information.  If you are not a TELUS  employee  and  have  this  information  please  call 1-877-333-8888 immediately.
+
+set class-of-service host-outbound-traffic forwarding-class RP set class-of-service host-outbound-traffic dscp-code-point cs6
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR"
+Which command creates a loopback interface on the CSR?,Answer: set interfaces lo0 unit 0 family inet address <loopback0_ip_address/prefix>,"delete interfaces lo0 unit 0 <COLOR=(0,176,80)>set interfaces</COLOR> lo0 unit 0 description ""CSR loopback address"" set interfaces lo0 unit 0 family inet no-redirects set interfaces lo0 unit 0 family inet address <loopback0_ip_address/prefix> set system default-address-selection set system no-redirects
+
+*/ create static routes  to point to eNode B   loopback  interface, OR */ static routes can be used for hub-spoke CSR scenario set routing-options static route <ip_subnet/prefix> next-hop < ip_address> metric 80
+
+*/ create static routes  to point to eNode B   loopback  interface, OR */ static routes can be used for hub-spoke CSR scenario <COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)>set routing-instances</COLOR></COLOR></COLOR></COLOR></COLOR> <VR-NAME> routing-options static route <ip_subnet/prefix> next-hop < ip_address> metric 80
+
+*/This Firewall Filter applies to Global Routing Layer of CSR
+*/allow OSS Mgt IP subnet */allow SSH from source from RE interface */(adjacent/next hop RE)
+
+In order to support CHR native vlan (ZTP) requirement, CSR port configuration has to change to ethernet-switching configuration
+·         Create L2 trunk port on CSR
+·         Create native vlan name and id  and irb interface on inet.0 and inet.6
+·         Create CP, UP vlans and irb interfaces to corresponded VRs
+·         Enable IPV4/IPV6 dual stack on irb interfaces
+·         Enable BGPv4/v6 on irb interfaces facing CHR
+·         Since each vlans create from global level per CSR, and it has to be unique per CHR connection under Cisco CHR scenario
+·         RAN-MGT (TM-RAN) to be used to support CHR OAM to OSS and to Rakuten vCUs
+·         NG-RAN-CP instance to be merged to current VPRN CP and received only default route from RE
+·         NG-RAN-UP instance to be merged to current VPRN UP and received only default route from RE
+·         OAM (RAN-MGT) instance to be merged to RAN-MGT (TM-RAN) and received full OAM routes
+
+*/ create static routes  to point to eNode B   loopback  interface, OR */ static routes can be used for hub-spoke CSR scenario set routing-options rib inet6.0 static route  <ipv6_subnet/prefix>  next-hop < ipv6_address> metric 80
+
+# this prefix-list can be shared between CP *& UP export policy set policy-options prefix-list HUAWEI-X2-LBS HUAWEI-eNB-LOOPBACK-IP/32
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+● eBGP peering are to be enabled in between CSRs and IXRs per vlan
+● CSR import policy to set standard community 'no-export' on all learned CMU routes, and to avoid those routes leak back into TELUS MPLS RAN
+● CSR applies ACL/firewall filter at ingress direction to restrict specific IP flow coming from CMUs such as CMU loopback IPV4 addresses
+● On CSR export policy uplink to RE/SE, apply prefix-list to block/drop CSR to  PWN facing IPsubnets ** since this is a common subnet to be used for all PWN-IOT Private RAN, and it does not need to advertise to MPLS any routing instance.
+
+In evaluation of using satellite and SDWAN service to provide MBH backup, CSR is required to setup BGP peering with SDWAN device:
+·         eBGP peering
+o   BGP import policy to set LP = 60 for routes learned from SDWAN;
+o   BGP export policy to set as-path prepend to reduce routing preference via SDWAN path
+·         POC VRFs in scope
+o   NG-RAN-CONTROL
+o   NG-RAN-USER
+o   NG-RAN-OAM
+o   TM-RAN
+o   IP-Alarm
+
+CSRs are to be terminated on an edge RE/SE in a distributed topology.  There isn't any dedicated edge RE sending connectivity loss alarm.  Attached diagram shows that CSR has a direct MPLS path to OSS resources such as Nucool probe, Intelliden, NTP, and jumpoint servers etc.
+CSR will have a direct MPLS path to OSS edge RE as well, snmp traps will be forwarded to Nucool probes NNM server (TEMIP) can be set up in a way to monitor connectivity of CSRs. When the NNM server detects connectivity lost on a CSR, it will generate a ticket to NRC.  In reality, EMS to eNodeB will detect connectivity failure much quicker than NNM to CSR.
+**As from Q3-2019, TM-RAN OSS access architecture is to be used for management of remote TM devices instead of TM-VRF (legacy). All the latest CSR in band management will use this new TM-RAN VRF to access OSS network resources for management support.
+
+*/ create static routes  to point to eNode B   loopback  interface, OR */ static routes can be used for hub-spoke CSR scenario <COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)>set routing-instances</COLOR></COLOR></COLOR></COLOR></COLOR> <VR-NAME> routing-options rib  <VR-NAME> .inet6.0 static route  <ipv6_subnet/prefix> next-hop < ipv6_address> metric 80
+
+1.0, Issue Date = October 31, 2023. 1.0, Notes = Initial issue for review. 1.1, Issue Date = December 7, 2023. 1.1, Notes = Update syslog facility override parameters Update tacacs timeout to 10 sec DNS setup as optional (currently not in use)
+The most current version of this document can be found here:
+https://drive.google.com/drive/folders/1Q1Quzq_OE9PkCQkcZRtlztLhYjv_b3I4
+Filename: CSR-ACX7024-configuration-v(latest version)
+Data-IP Master Sparing Guidelines (TELUS Internal)
+https://sharepoint.tsl.telus.com/sites/tsbse/Operational%20Docs/Forms/AllItems.aspx?id=%2Fsites%2Fts bse%2FOperational%20Docs%2FSparing%2FData%2DIP%5FNetwork%5FSparing
+Filename:  UC_Juniper CSR ACX7024 Sparing.xls
+
+*/  optional - when this command is being enable, console will no longer be accessible and used with caution !!
+** set system ports console disable
+
+To support Ciena CHR (ZTP) requirement, CSR port configuration will keep same L3 subinterfaces configuration
+·         Create direct connected IPV4/IPV6 p2p sub-interface on inet.0 and inet6.0 facing CHR global export direct connected interface IPV4 from inet.0 and BGPv6 on IPV6 from inet6.0 to VPRN/VRF RAN-MGT toward OSS network
+·         Create CHR's CP, UP, RAN-MGT vlans and sub-interfaces to corresponded VRs
+·         Enable IPV4 on sub-interfaces for inet.0, CP, UP VRs
+·         Enable IPV6 on sub-interface for inet6.0 (inet6.0 on CSR for both CHR PnP,  eNB OAM)
+·         Enable BGPv4 on sub-interfaces facing CHR VRs CP, UP (* MD5 password to be sync with CHR)
+·         Enable BGPv6 on sub-interfaces facing CHR Global (* MD5 password to be sync with CHR)
+·         RE/SE RAN-MGT instance to be used to support CHR IPV4/IPV6 Global (MGT, eNB OAM V6) to OSS network resources
+·         NG-RAN-CP instance to be merged to current VPRN/VRF CP and received only default route from RE/SE
+·         NG-RAN-UP instance to be merged to current VPRN/VRF UP and received only default route from RE/SE
+·         No Native vlan on Ciena, CHR uses tagged vlan 127, and physical connection in between either 1G or 10G
+·         PTP traffic G.8275.2 has enabled in VR NG-RAN-CP, this traffic will run between CHRs managed by CHRs team
+
+Under this Scenario, HUB and Spoke CSR is to be connected through Microwave if applicable, and CSRs configuration requirement are:
+-Layer-3 GE sub-interfaces (vlan 2001-2004) per routing layer  between Hub and Spoke CSRs
+-Microwave OAM can be connected to CSR global routing layer and MW OAM IP subnet is to be advertised through eBGP to RE
+-4x   /30 IP subnets are to be used for Hub and Spoke connectivity
+-No eBGP routing protocol running between Hub and Spoke CSR
+-Multiple static routes are to be configured at Hub CSR per routing layer; static routes are to be advertised through eBGP at Hub CSR to RE (ex, spoke side: CSR loopback, all IP addresses of an eNode B, IP alarm etc.)
+-At spoke site CSR, a default route next hop to Hub CSR is to be configured per routing layer
+-At spoke site eNode configuration will be identical to previous LAN connectivity session as above.
+**Non-preferable solution to support SamSung 4G LTE BBU in 2020 Q4 due to MW constrain (TBD)
+
+Under this Scenario, a new CSR connects last mile access to an offnet carrier network and IP traffic is to be dropped at 10GE NNI on a BE/DE (7450 ESS6), and then forward to REs. Configuration requirement at CSR:
+-two unique VLAN per routing layer ( there are Red & Blue concept); recommend negotiation to offnet carrier with vlan range (ex. Red 2001-2999; Blue 3001-3999 for offnet)
+-2x  /30 WAN IP subnet at WAN interface per routing layer
+-eBGP configuration per routing layer facing edge REs
+-a /32 loopback IP (from LTE pool) only at global routing layer for CSR management
+-separated VPLS service instances are to be created at corresponded BE/DE and associate to the proper vlans and CSR sub-interfaces (No XE from CSR allow via NNI)
+** In Q3 2023, TELUS has implemented offnet carrier L2 RAN NNIs directly connect to a pair of REs in East Region and eliminated the requirement of BE/DE switches.
+** UMTS Node B interface connection is required to upgrade from 100M to 1G"
+How do you enable SSH services via the CLI?,Answer: set system services ssh,"*/ ftp server service to be disable.
+*/ enable when needs it
+*/ by default, sftp to be used for file transfer
+<COLOR=(51,153,102)>set system services</COLOR> ssh root-login deny set system services ssh protocol-version v2 set system services ssh ciphers aes128-ctr set system services ssh ciphers aes192-ctr set system services ssh ciphers aes256-ctr set system services ssh connection-limit 10 set system services ssh rate-limit 10
+set system services netconf ssh set system services ssh sftp-server */use only when file transfer initiates from Jumpbox to CSR, by default CSR will not accept sftp
+
+*/ Enter to configuration mode, type top <enter> to system configuration top level
+*/ for root and super-user account, please enter plain text password first time, or alternatively the system generated encrypted password
+set system root-authentication encrypted-password ""<secret>""; ## SECRET-DATA
+set system login user remote  uid 2000
+set system login user remote  class REMOTE
+set system login class REMOTE idle-timeout 15   */ to enable remote user login using tacacs with
+
+*/  optional - when this command is being enable, console will no longer be accessible and used with caution !!
+** set system ports console disable
+
+set system login class REMOTE permissions all
+set system login class admin-local idle-timeout 15
+*/create super-user access with timeout session
+set system login class admin-local permissions all
+set system login user <admin>  uid 2001
+set system login user <admin>  class admin-local
+set system login user <admin>  encrypted-password ""<secret>""; ## SECRET-DATA
+set system ports console log-out-on-disconnect    */console setting logout after disconnect console
+TELUS Communications Inc.
+
+set system tacplus-server  <tacas1_ip_address>  secret  <key> set system tacplus-server  <tacas1_ip_address>  timeout 10 set system tacplus-server  <tacas1_ip_address>  source-address <loopback0_ip_address> set system tacplus-server  <tacas2_ip_address> secret  <key> set system tacplus-server  <tacas2_ip_address> timeout 10 set system tacplus-server  <tacas2_ip_address>  source-address <loopback0_ip_address> set system authentication-order tacplus set system authentication-order password
+
+*/This Firewall Filter applies to Global Routing Layer of CSR
+*/allow OSS Mgt IP subnet */allow SSH from source from RE interface */(adjacent/next hop RE)
+
+Put a copy of JUNO EVO installed package to OSS jumpbox
+From direction at ACX to download from OSS sftp server scp user@server-ip:/remote-path/image   /local-path/.
+
+set system host-name  <CLLI> set system time-zone  <time-zone>
+
+<COLOR=(0,176,80)>set interfaces</COLOR> et-0/0/x description ""Huawei SC dhcp client/IP-CAMS""
+set interfaces et-0/0/x hierarchical-scheduler
+set interfaces et-0/0/x mtu 9216
+set interfaces et-0/0/x speed 1g/10g/25g  # refer to SFP speed
+set interfaces et-0/0/x ether-options no-flow-control
+set interfaces et-0/0/x unit 0 family ethernet-switching interface-mode access
+set interfaces et-0/0/x unit 0 family ethernet-switching vlan members SC-LAN|IP-CAMS
+
+set class-of-service host-outbound-traffic forwarding-class RP set class-of-service host-outbound-traffic dscp-code-point cs6
+
+set firewall family inet filter PROTECT-RE interface-specific set firewall family inet filter PROTECT-RE term Mgt-Access from source-prefix-list oss-subnets
+set firewall family inet filter PROTECT-RE term Mgt-Access from protocol tcp set firewall family inet filter PROTECT-RE term Mgt-Access from destination-port ssh
+set firewall family inet filter PROTECT-RE term Mgt-Access then accept set firewall family inet filter PROTECT-RE term Mgt-ICMP from protocol icmp */separate term in EVO
+set firewall family inet filter PROTECT-RE term Mgt-ICMP from source-prefix-list oss-subnets set firewall family inet filter PROTECT-RE term Mgt-ICMP then accept
+set firewall family inet filter PROTECT-RE term Mgt-SNMP from source-prefix-list oss-subnets set firewall family inet filter PROTECT-RE term Mgt-SNMP from protocol udp
+set firewall family inet filter PROTECT-RE term Mgt-SNMP from destination-port snmp set firewall family inet filter PROTECT-RE term Mgt-SNMP then accept
+set firewall family inet filter PROTECT-RE term Mgt-NTP-TRUST from source-prefix-list oss-subnets set firewall family inet filter PROTECT-RE term Mgt-NTP-TRUST from protocol udp
+set firewall family inet filter PROTECT-RE term Mgt-NTP-TRUST from source-port ntp set firewall family inet filter PROTECT-RE term Mgt-NTP-TRUST then accept
+set firewall family inet filter PROTECT-RE term Mgt-NTP-UNTRUST from protocol udp set firewall family inet filter PROTECT-RE term Mgt-NTP-UNTRUST from destination-port ntp
+set firewall family inet filter PROTECT-RE term Mgt-NTP-UNTRUST then discard set firewall family inet filter PROTECT-RE term other-source from protocol udp
+set firewall family inet filter PROTECT-RE term other-source from protocol tcp set firewall family inet filter PROTECT-RE term other-source from destination-port ssh
+set firewall family inet filter PROTECT-RE term other-source from destination-port telnet set firewall family inet filter PROTECT-RE term other-source from destination-port snmp
+set firewall family inet filter PROTECT-RE term other-source from destination-port http
+set firewall family inet filter PROTECT-RE term other-source from destination-port https set firewall family inet filter PROTECT-RE term other-source then count INVALID-ACCESS set firewall family inet filter PROTECT-RE term other-source then discard
+*/Alternative to allow all local system generated traffic <COLOR=(0,176,80)>set firewall family inet filter PROTECT-RE  term last-local-system then accept</COLOR>
+*/When without above 'last-local-system' them. Apart from OSS MGT, system generate traffic will require to have specific rule to allow two way communication such as BFD, multihop BGP. User would require to add rule if needed
+Example:
+<COLOR=(0,176,80)>set policy-options prefix-list allow-transit-subnets <a.b.c.d>/32</COLOR>
+<COLOR=(0,176,80)>set firewall family inet filter PROTECT-RE  term BFD-PEER from source-prefix-list allow-transit-subnets</COLOR> <COLOR=(0,176,80)>set firewall family inet filter PROTECT-RE  term BFD-PEER from protocol udp</COLOR> <COLOR=(0,176,80)>set firewall family inet filter PROTECT-RE  term BFD-PEER then accept</COLOR> <COLOR=(0,176,80)>set firewall family inet filter PROTECT-RE  term MH-BGP from source-prefix-list allow-transit-subnets</COLOR> <COLOR=(0,176,80)>set firewall family inet filter PROTECT-RE  term MH-BGP from protocol tcp</COLOR> <COLOR=(0,176,80)>set firewall family inet filter PROTECT-RE  term MH-BGP then accept</COLOR> <COLOR=(0,176,80)>set firewall family inet filter PROTECT-RE  term last then reject</COLOR>
+- */ IPV6 filter TBD
+*/ bind firewall filter protect-RE only to interface loopback0 <COLOR=(0,176,80)>set interfaces</COLOR> lo0 unit 0 family inet filter input PROTECT-RE
+
+To support Ciena CHR (ZTP) requirement, CSR port configuration will keep same L3 subinterfaces configuration
+·         Create direct connected IPV4/IPV6 p2p sub-interface on inet.0 and inet6.0 facing CHR global export direct connected interface IPV4 from inet.0 and BGPv6 on IPV6 from inet6.0 to VPRN/VRF RAN-MGT toward OSS network
+·         Create CHR's CP, UP, RAN-MGT vlans and sub-interfaces to corresponded VRs
+·         Enable IPV4 on sub-interfaces for inet.0, CP, UP VRs
+·         Enable IPV6 on sub-interface for inet6.0 (inet6.0 on CSR for both CHR PnP,  eNB OAM)
+·         Enable BGPv4 on sub-interfaces facing CHR VRs CP, UP (* MD5 password to be sync with CHR)
+·         Enable BGPv6 on sub-interfaces facing CHR Global (* MD5 password to be sync with CHR)
+·         RE/SE RAN-MGT instance to be used to support CHR IPV4/IPV6 Global (MGT, eNB OAM V6) to OSS network resources
+·         NG-RAN-CP instance to be merged to current VPRN/VRF CP and received only default route from RE/SE
+·         NG-RAN-UP instance to be merged to current VPRN/VRF UP and received only default route from RE/SE
+·         No Native vlan on Ciena, CHR uses tagged vlan 127, and physical connection in between either 1G or 10G
+·         PTP traffic G.8275.2 has enabled in VR NG-RAN-CP, this traffic will run between CHRs managed by CHRs team
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x  unit x classifiers dscp MBH_V4 set class-of-service interfaces et-0/0/x  unit y  classifiers dscp-ipv6 MBH_V6
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)>set routing-instances</COLOR></COLOR></COLOR></COLOR></COLOR> sc-inet instance-type virtual-router set routing-instances sc-inet description <description> set routing-instances sc-inet system services dhcp-local-server group local-sc-pool interface irb.40 set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet network <public_IP_subnet/prefix> */ of vlan 40
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet range range1 low <public_IP_address(low)>
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet range range1 high <public_IP_address(high)>
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet dhcp-attributes maximum-lease-time 259200 */ lease time 3 days set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet dhcp-attributes nameserver <x.x.x.x> */Inet DNS1
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet dhcp-attributes nameserver <x.x.x.x> */Inet DNS2
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet dhcp-attributes router <public_IP_address> */vlan 40 IP as default GW
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet dhcp-attributes option 3 ip-address <public_IP_address> */vlan 40 IP as default GW
+set routing-instances sc-inet interface et-0/0/x.2xxx set routing-instances sc-inet interface et-0/0/x.3xxx set routing-instances sc-inet interface irb.40
+# For VR BGP configuration and import/export policy, please refer to section configure VR BGP.
+
+set system syslog console any alert
+set system syslog console pfe error
+set system syslog user * any emergency
+set system syslog host <syslog_ip_address> any info
+set system syslog host <syslog_ip_address> facility-override local7
+*/update since version
+1.1
+set system syslog host <syslog_ip_address> log-prefix <CLLI>
+*/hostname
+set system syslog source-address <loopback0_ip_address>
+set system syslog file messages any info */local syslog
+set system syslog file messages change-log any
+set system syslog file interactive-commands interactive-commands any
+set system syslog file default-log-messages any any
+set system syslog file default-log-messages structured-data
+set system syslog file local-syslog authorization info
+set system syslog file messages authorization info
+
+set protocols lldp interface all disable
+
+set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term A from protocol direct set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term A then as-path-prepend ""6xxxx 6xxxx 6xxxx 6xxxx""
+set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term A then accept set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term B from protocol static set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term B then as-path-prepend ""6xxxx 6xxxx 6xxxx 6xxxx""
+set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term B then accept set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm then default-action reject
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR"
+What is the exact Junos command to configure a VLAN-tagged IRB interface for VLAN 2001?,"Answer:
+set interfaces irb unit 2001 family inet address <IPV4_address/mask> set interfaces irb unit 2001 family inet6 address <IPV6_address/64> set interfaces irb unit 2001 family inet no-redirects set interfaces irb unit 2001 family inet6 no-redirects set vlans VLAN2001 vlan-id 2001 set vlans VLAN2001 l3-interface irb.2001
+```","*/ mainly use for multiple switchport to a single L3 gateway like pico cell or IP alarm etc.
+*/ first create vlan and irb interface
+set vlans <vlan-name>  vlan-id <vid>
+set vlans <vlan-name> l3-interface irb.<vid> <COLOR=(0,176,80)>set interfaces</COLOR> irb unit <vid> family inet address IPV4_address/mask set interfaces irb unit <vid> family no-redirects set interfaces irb unit<vid> family inet6 address  IPV6_address/64 set interfaces irb unit<vid> family inet6 no-redirects
+
+*/ Please ensure global routing layer and management configuration has enabled prior to create new VR for indoor SC service
+*/ create VLAN (id=40 recommendation) for Small Cells */ create VLAN (id=80 recommendation) for IP-CAMS
+set vlans  SC-LAN|IP-CAMS  vlan-id  40|80
+set vlans  SC-LAN|IP-CAMS  l3-interface irb.40|80
+set protocols l2-learning global-mac-table-aging-time  300
+<COLOR=(0,176,80)>set interfaces</COLOR> irb unit 40|80 description <description> set interfaces irb unit 40|80  family inet address <public_ip_address/prefix> <COLOR=(0,176,80)>set interfaces irb unit 40|80  family inet6 address <public_ipv6_address/prefix></COLOR>
+
+<COLOR=(0,176,80)>set interfaces</COLOR> et-0/0/x description ""port  description"" set interfaces et-0/0/x unit <uid> description ""subif description"" set interfaces et-0/0/x unit <uid> vlan-id  <vid> set interfaces et-0/0/x unit <uid> family inet address IPV4_address/mask set interfaces et-0/0/x unit <uid> family inet6 address IPV6_address/64
+
+delete interfaces ge|xe-x/x/x  unit 0     */ delete default L2 FDX, and no link-mode configuration <COLOR=(0,176,80)>set interfaces</COLOR> ge|xe-0/x/x   description ""Facing PIOT CMU VLAN ? "" set interfaces ge|xe-0/x/x   flexible-vlan-tagging set interfaces ge|xe-0/x/x   ether-options no-flow-control set interfaces ge|xe-0/x/x   ether-options no-auto-negotiation # ge interface only, not apply to 10G set interfaces ge|xe-0/x/x   speed 1g # xe default 10G, and not require speed configuration set interfaces ge|xe-0/x/x   mtu  9216 set interfaces ge|xe-0/x/x   unit <number> vlan-id <number>    # VLANs : 1100 (CP),1500 (UP),1600(Legacy) set interfaces ge|xe-0/x/x   unit <number> family inet  no-redirects set interfaces ge|xe-0/x/x   unit <number> family inet address <sub-interface_ip_address/prefix>
+
+<COLOR=(0,176,80)>set interfaces</COLOR> et-0/0/x description ""port description""
+set interfaces et-0/0/x hierarchical-scheduler
+set interfaces et-0/0/x  native-vlan-id <native-vid> */for native vlan if needs
+set interfaces et-0/0/x speed 1g|10g|25g
+set interfaces et-0/0/x mtu 9216
+set interfaces et-0/0/x unit 0 family ethernet-switching interface-mode trunk
+set interfaces et-0/0/x unit 0 family ethernet-switching vlan members <vlan-name>
+
+set vlans CHR3-CP-V61 vlan-id 61
+set vlans CHR3-CP-V61 l3-interface irb.61
+set vlans CHR3-OAM-NATIVE-V63 vlan-id 63               # use as common native vlan for Cisco CHR
+set vlans CHR3-OAM-NATIVE-V63 l3-interface irb.63
+set vlans CHR3-UP-V62 vlan-id 62
+set vlans CHR3-UP-V62 l3-interface irb.62
+<COLOR=(0,176,80)>set interfaces</COLOR> et-0/0/x  description port description
+set interfaces et-0/0/x  hierarchical-scheduler
+set interfaces et-0/0/x native-vlan-id 63
+set interfaces et-0/0/x  speed 1g/10g/25g   # select the SFP speed in use
+set interfaces et-0/0/x  mtu 9216
+set interfaces et-0/0/x  ether-options no-flow-control
+set interfaces et-0/0/x  unit 0 description port description
+set interfaces et-0/0/x  unit 0 family ethernet-switching interface-mode trunk
+set interfaces et-0/0/x  unit 0 family ethernet-switching vlan members CHR3-CP-V61
+set interfaces et-0/0/x  unit 0 family ethernet-switching vlan members CHR3-UP-V62
+set interfaces et-0/0/x unit 0 family ethernet-switching vlan members CHR3-OAM-NATIVE-V63
+
+<COLOR=(0,176,80)>set interfaces</COLOR> et-0/0/y description 'port description'
+set interfaces et-0/0/y  hierarchical-scheduler
+set interfaces et-0/0/y  flexible-vlan-tagging
+set interfaces et-0/0/y  speed 1g
+set interfaces et-0/0/y  mtu 9216
+set interfaces et-0/0/y  encapsulation flexible-ethernet-services
+set interfaces et-0/0/y  unit 0 vlan-id 711  # dummy vlan for analyzer output
+set interfaces et-0/0/y  unit 0 family ethernet-switching
+
+*/ create a dummy vlan on input interface ; ex. dummy vlan 99
+```
+<COLOR=(0,176,80)>set interfaces</COLOR> et-0/0/x description 'port description' set interfaces et-0/0/x hierarchical-scheduler set interfaces et-0/0/x flexible-vlan-tagging set interfaces et-0/0/x speed 10g set interfaces et-0/0/x mtu 9216 set interfaces et-0/0/x encapsulation flexible-ethernet-services set interfaces et-0/0/x unit 0 description ""dummy vlan for analyzer"" set interfaces et-0/0/x unit 0 vlan-id 99  # it can be any unused vlan on this interface
+```
+set interfaces et-0/0/x unit 0 family ethernet-switching
+
+<COLOR=(0,176,80)>set interfaces</COLOR> et-0/0/x description ""port description""
+set interfaces et-0/0/x hierarchical-scheduler
+set interfaces et-0/0/x speed 1g
+set interfaces et-0/0/x mtu 9216
+set interfaces et-0/0/x unit 0 family ethernet-switching interface-mode access
+set interfaces et-0/0/x unit 0 family ethernet-switching vlan members <vlan-name>
+*/disble unused physical ports / interfaces set interfaces  et-0/0/x   disable
+
+https://www.juniper.net/documentation/us/en/hardware/acx7024/index.html
+
+https://www.juniper.net/documentation/product/us/en/junos-osevolved/#cat=software_documentation
+Junos® OS Evolved Software Installation and Upgrade Guide https://www.juniper.net/documentation/us/en/software/junos/junos-install-upgrade-evo/overviewevo/topics/task/booting-junos-with-linux-by-usb-new.html#id-usb-boot-junos-os-with-linux-onto-thedevice
+
+*/ for DWDM 10G tunable optic transceiver , setup wavelength associate to MUX assignment.
+<COLOR=(0,176,80)>set interfaces</COLOR> et-0/0/x optics-options wavelength 15xx.xx */reference to MUX port spec. set interfaces et-0/0/x optics-options laser-enable
+*/ ports 0-3 (40G/100G); ports 4 - 26 (1G/10G/25G), port 27 reserved */ vlan 2001-2004 range for red uplink, 3001-3004 range for blue uplink
+delete set interfaces et-0/0/x   # to remove default configuration unit 0
+set interfaces et-0/0/x hierarchical-scheduler
+set interfaces et-0/0/x flexible-vlan-tagging
+set interfaces et-0/0/x mtu 9216
+set interfaces et-0/0/x encapsulation flexible-ethernet-services
+set interfaces et-0/0/x ether-options no-auto-negotiation */refer to LAN interfaces table
+set interfaces et-0/0/x ether-options no-flow-control
+set interfaces et-0/0/x description ""port  description""
+set interfaces et-0/0/x speed  1g/10g/25g
+*/refer to optic speed
+set interfaces et-0/0/x unit <uid> description ""subif description""
+set interfaces et-0/0/x unit <uid> vlan-id  <vid>
+set interfaces et-0/0/x unit <uid> family inet address IPV4_address/mask
+set interfaces et-0/0/x unit <uid> family inet6 address IPV6_address/64
+.
+.
+
+*/ default dscp map from Juno software, which classified two dscp= be, and dscp=NC1
+*/ there is requirement to re-organize all dscp code-points to TELUS defined new forwarding classes for LTE: BE,AF2,AF3,EF,signaling_voice
+
+<COLOR=(0,176,80)>set interfaces</COLOR> irb unit 61 family inet6 address ?:1/64   #CP IPV6
+set interfaces irb unit 62 family inet6 address ?:1/64   #UP IPV6
+set interfaces irb unit 63 family inet address IPV4/30   #OAM IPV4/IPV6
+set interfaces irb unit 63 family inet6 address ?:1/64
+#bind irb interfaces to corresponded VR, and IRB of OAM leave it at inet.0 to reach RAN-MGT/TM-RAN
+<COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)>set routing-instances</COLOR></COLOR></COLOR></COLOR></COLOR> NG-RAN-CP interface irb.61
+set routing-instances NG-RAN-UP interface irb.64
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)>set routing-instances</COLOR></COLOR></COLOR></COLOR></COLOR> <VR-NAME> instance-type virtual-router
+*/Associate Interfaces to this routing-instance (VRF), ex. WAN, LAN, VLAN, LP etc. set routing-instances <VR-NAME> interface et-0/0/x.x   */if any LAN, WAN  L3 interfaces
+.
+.
+set routing-instances <VR-NAME> interface irb.x
+*/if any vlan L3 interface under a VR
+- */create  static routes within a routing-instance (VR) refer to static route section
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)>set routing-instances</COLOR></COLOR></COLOR></COLOR></COLOR> sc-inet instance-type virtual-router set routing-instances sc-inet description <description> set routing-instances sc-inet system services dhcp-local-server group local-sc-pool interface irb.40 set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet network <public_IP_subnet/prefix> */ of vlan 40
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet range range1 low <public_IP_address(low)>
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet range range1 high <public_IP_address(high)>
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet dhcp-attributes maximum-lease-time 259200 */ lease time 3 days set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet dhcp-attributes nameserver <x.x.x.x> */Inet DNS1
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet dhcp-attributes nameserver <x.x.x.x> */Inet DNS2
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet dhcp-attributes router <public_IP_address> */vlan 40 IP as default GW
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet dhcp-attributes option 3 ip-address <public_IP_address> */vlan 40 IP as default GW
+set routing-instances sc-inet interface et-0/0/x.2xxx set routing-instances sc-inet interface et-0/0/x.3xxx set routing-instances sc-inet interface irb.40
+# For VR BGP configuration and import/export policy, please refer to section configure VR BGP.
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> irb unit 6x classifiers dscp LTE-SERVICE  #existing classifier in CSR set class-of-service interfaces ge|xe-x/x/x  scheduler-map LTE_66_21_13  #existing scheduler in CSR
+
+, 1 = . , 2 = . , 3 = . , 4 = The current operational state of the interface. The noIfIdentifier(3) state indicates that no valid Interface Identifier is assigned to the interface. This state usually indicates that the link- local interface address failed Duplicate Address Detection. If ipv6IfAdminStatus is down(2) then ipv6IfOperStatus should be down(2). If ipv6IfAdminStatus is changed to up(1) then ipv6IfOperStatus should change to up(1) if the interface is ready to transmit and receive network traffic; it should remain in the down(2) or noIfIdentifier(3) state if and only if there is a fault that prevents it from going to the up(1) state; it should remain in the notPresent(5) state if the interface has missing (typically, lower layer) components. Enumerations: 1 - up 2 - down 3 - noIfIdentifier 4 - unknown. JUNIPER-MIB (jnx-chassis.txt), 1 = jnxFruOffline. JUNIPER-MIB (jnx-chassis.txt), 2 = .1.3.6.1.4.1.2636.4.1.1 0. JUNIPER-MIB (jnx-chassis.txt), 3 = Snmp trap (critical). JUNIPER-MIB (jnx-chassis.txt), 4 = A jnxFruOffline trap signifies that the SNMP
+https://apps.juniper.net/mib- explorer/navigate?software=Junos%20OS&release=22.2R2&name=jnxFruOfflineReason&oid=1.3.6.1. 4.1.2636.3.1.15.1.10
+JUNIPER-MIB (jnx-chassis.txt), jnxFruOnline = jnxFruPowerOn. JUNIPER-MIB (jnx-chassis.txt), .1.3.6.1.4.1.2636.4.1.1 1 = .1.3.6.1.4.1.2636.4.1.8. JUNIPER-MIB (jnx-chassis.txt), Snmp Trap (Clear) = Snmp Trap (Clear). JUNIPER-MIB (jnx-chassis.txt), A jnxFruOnline trap signifies that the SNMP entity, acting in an agent role, has detected that the specified FRU (Field Replaceable Unit) has gone online in the chassis. = A jnxFruOnline trap signifies that the SNMP entity, acting in an agent role, has detected that the specified FRU (Field Replaceable Unit) has gone online in the chassis.. JUNIPER-MIB (jnx-chassis.txt), jnxFruOnline = jnxFruPowerOff. JUNIPER-MIB (jnx-chassis.txt), .1.3.6.1.4.1.2636.4.1.1 1 = .1.3.6.1.4.1.2636.4.1.7. JUNIPER-MIB (jnx-chassis.txt), Snmp Trap (Clear) = Snmp trap (critical). JUNIPER-MIB (jnx-chassis.txt), A jnxFruOnline trap signifies that the SNMP entity, acting in an agent role, has detected that the specified FRU (Field Replaceable Unit) has gone online in the chassis. = A jnxFruPowerOff trap signifies that the SNMP entity, acting in an agent role, has detected that the specified FRU (Field Replaceable Unit) has been powered off in the chassis.
+
+https://www.juniper.net/documentation/us/en/hardware/acx7024/topics/task/acx7024-installing-andconnecting.html
+
+In order to support CHR native vlan (ZTP) requirement, CSR port configuration has to change to ethernet-switching configuration
+·         Create L2 trunk port on CSR
+·         Create native vlan name and id  and irb interface on inet.0 and inet.6
+·         Create CP, UP vlans and irb interfaces to corresponded VRs
+·         Enable IPV4/IPV6 dual stack on irb interfaces
+·         Enable BGPv4/v6 on irb interfaces facing CHR
+·         Since each vlans create from global level per CSR, and it has to be unique per CHR connection under Cisco CHR scenario
+·         RAN-MGT (TM-RAN) to be used to support CHR OAM to OSS and to Rakuten vCUs
+·         NG-RAN-CP instance to be merged to current VPRN CP and received only default route from RE
+·         NG-RAN-UP instance to be merged to current VPRN UP and received only default route from RE
+·         OAM (RAN-MGT) instance to be merged to RAN-MGT (TM-RAN) and received full OAM routes"
+Which CLI shows how to apply a shaping rate of 300 Mbps on a GE interface?,"Answer:
+set class-of-service interfaces ge-x/y/z shaping-rate 300m","- @ GE WAN uplink applies:
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> ge-x/y/z shaping-rate 300m
+** UMTS Node B interface connection is required to upgrade to  from 100M to 1G
+
+set class-of-service traffic-control-profiles MBH_100G scheduler-map MBH_66_21_13 set class-of-service traffic-control-profiles MBH_100G shaping-rate 100g set class-of-service traffic-control-profiles MBH_25G scheduler-map MBH_66_21_13 set class-of-service traffic-control-profiles MBH_25G shaping-rate 25g set class-of-service traffic-control-profiles MBH_10G scheduler-map MBH_66_21_13 set class-of-service traffic-control-profiles MBH_10G shaping-rate 10g set class-of-service traffic-control-profiles MBH_1G scheduler-map MBH_66_21_13 set class-of-service traffic-control-profiles MBH_1G shaping-rate 1g set class-of-service traffic-control-profiles MBH_300M scheduler-map MBH_66_21_13 set class-of-service traffic-control-profiles MBH_300M shaping-rate 300m
+
+delete interfaces ge|xe-x/x/x  unit 0     */ delete default L2 FDX, and no link-mode configuration <COLOR=(0,176,80)>set interfaces</COLOR> ge|xe-0/x/x   description ""Facing PIOT CMU VLAN ? "" set interfaces ge|xe-0/x/x   flexible-vlan-tagging set interfaces ge|xe-0/x/x   ether-options no-flow-control set interfaces ge|xe-0/x/x   ether-options no-auto-negotiation # ge interface only, not apply to 10G set interfaces ge|xe-0/x/x   speed 1g # xe default 10G, and not require speed configuration set interfaces ge|xe-0/x/x   mtu  9216 set interfaces ge|xe-0/x/x   unit <number> vlan-id <number>    # VLANs : 1100 (CP),1500 (UP),1600(Legacy) set interfaces ge|xe-0/x/x   unit <number> family inet  no-redirects set interfaces ge|xe-0/x/x   unit <number> family inet address <sub-interface_ip_address/prefix>
+
+Reference to above section for speed and duplex adjustment for e/g Node B
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x  output-traffic-control-profile MBH_<speed> set class-of-service interfaces et-0/0/x  unit x  rewrite-rules ieee-802.1 MBH-DOT1P */WAN for only to RE/SE or toward spoke CSR */WAN for only to set class-of-service interfaces et-0/0/x  unit y  rewrite-rules ieee-802.1 MBH-DOT1P RE/SE or toward spoke CSR
+.
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x  output-traffic-control-profile MBH_<speed>G set class-of-service interfaces et-0/0/x  unit  <uid> forwarding-class  L-AF3 set class-of-service interfaces et-0/0/x  unit  <uid>  rewrite-rules ieee-802.1 MBH-DOT1P
+*/WAN for only to RE/SE or spoke CSR
+
+set firewall policer 100M if-exceeding bandwidth-limit 100m set firewall policer 100M if-exceeding burst-size-limit 125k set firewall policer 100M then discard
+
+<COLOR=(0,176,80)>set interfaces</COLOR> ge|xe-0/x/x   unit <number> family inet filter input CMU_CSID_V1100|1500|1600-INGR
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x  output-traffic-control-profile MBH_<speed>G set class-of-service interfaces et-0/0/x  unit  <uid> forwarding-class  L-BE set class-of-service interfaces et-0/0/x  unit  <uid>  rewrite-rules ieee-802.1 MBH-DOT1P */WAN for only to RE/SE or spoke CSR
+
+**Please verify service order whether access circuit is a 1GE or 300M
+For  300M access @ GE WAN uplink applies:
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> ge-x/y/z shaping-rate 300m
+UMTS/HSPA service configuration requirement on a new CSR:
+-UMTS/HSPA configuration under global routing layer, to be moved to its own VR under new build or CSR HW upgrade as from Q3-2019
+-a /32 loopback IP assigns from new LTE Mgt IP block to access TM-RAN
+-enable eBGP protocol  to form adjacency with an edged RE
+-no BFD requirement on CSR
+-2x /30 WAN IP subnet from LTE WAN IP block
+-Exception on Cogeco * VLAN  (Red and Blue) is to be unique per site because of limitation on Cogeco network infrastructure to support
+-All UMTS/HSPA  Node B, MW, IP subnets assignment to be sourced from UMTS IP block
+-* QoS policy and scheduler to be deployed under LTE, all sub/interfaces should re-configure to use LTE QoS policy
+In Q3 2023, BELL RAN NNIs and Cogeco NNIs in Ontario have been migrated to Juniper REs
+** UMTS Node B interface connection is required to upgrade from 100M to 1G
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+set firewall family ethernet-switching filter IP-ALARM-L2-100M  interface-specific set firewall family ethernet-switching filter IP-ALARM-L2-100M term A then accept set firewall family ethernet-switching filter IP-ALARM-L2-100M  term A then policer 100M <COLOR=(0,176,80)>set firewall family ethernet-switching filter IP-ALARM-L2-100M term A then policer 100M</COLOR> # option if requestor wants more bandwidth : 100M+  policer defined under IPCAM
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> ge|xe-0/x/x   scheduler-map LTE_66_21_13 set class-of-service interfaces ge|xe-0/x/x   unit  <number>  classifiers dscp LTE-SERVICE
+set class-of-service interfaces ge|xe-0/x/x  unit  <number>    rewrite-rules ieee-802.1 LTE-SERVICE
+
+https://www.juniper.net/documentation/us/en/hardware/acx7024/index.html
+
+360Gbps non-blocking Switching capacity, 1 = . FIB for IPv4 (unicast LPM routes), 1 = 768000. FIB for IPv6, 1 = 192000. IPv4 interfaces, 1 = 16000. IPv6 interfaces, 1 = 2000. IRB/BVI interfaces, 1 = 2000. VLAN bundling: vlan-id ranges per vlan-id-list, 1 = 256. VRRP groups, 1 = 32. VRFs (Shared by IPv4/IPv6), 1 = 2000. Single Hop BFD IPv4 sessions, @10 ms, 1 = 100. Single Hop BFD IPv6 sessions, @10 ms, 1 = 100. TCAM (Not in HW), 1 = N/A. Egress ACL terms, 1 = 2000. Ingress ACL terms, 1 = 4000. Lo0 ACL terms, 1 = 1000. Total Number of Terms in Multiple Term IPv4 Filter, Terms, 1 = 4000. Loopback IPv6 Filter, Terms, 1 = 1024. Loopback IPv4 Filter, Terms, 1 = 1024. Ingress IPv6 Filter Scale, Terms, 1 = 4000. Ingress IPv4 Filter Scale, Terms, 1 = 4000
+Egress IPv6 Filter Scale, Terms, 1 = 2000. Egress IPv4 Filter Scale, Terms, 1 = 2000
+
+Under this Scenario, new CSR connects to a RE/SE directly through a GE / XE circuit, and configuration requirement at CSR:
+-a unique VLAN per routing layer ( there is no Red or Blue concept) ; recommend vlan range (2001 - 200x for onnet)
+-a /30 WAN IP subnet at WAN interface per routing layer
+-eBGP configuration per routing layer facing edge RE
+-a /32 loopback IP only from (LTE pool) requires at global routing layer for CSR management
+** UMTS Node B interface connection is required to upgrade from 100M to 1G
+
+set vlans CHR3-CP-V61 vlan-id 61
+set vlans CHR3-CP-V61 l3-interface irb.61
+set vlans CHR3-OAM-NATIVE-V63 vlan-id 63               # use as common native vlan for Cisco CHR
+set vlans CHR3-OAM-NATIVE-V63 l3-interface irb.63
+set vlans CHR3-UP-V62 vlan-id 62
+set vlans CHR3-UP-V62 l3-interface irb.62
+<COLOR=(0,176,80)>set interfaces</COLOR> et-0/0/x  description port description
+set interfaces et-0/0/x  hierarchical-scheduler
+set interfaces et-0/0/x native-vlan-id 63
+set interfaces et-0/0/x  speed 1g/10g/25g   # select the SFP speed in use
+set interfaces et-0/0/x  mtu 9216
+set interfaces et-0/0/x  ether-options no-flow-control
+set interfaces et-0/0/x  unit 0 description port description
+set interfaces et-0/0/x  unit 0 family ethernet-switching interface-mode trunk
+set interfaces et-0/0/x  unit 0 family ethernet-switching vlan members CHR3-CP-V61
+set interfaces et-0/0/x  unit 0 family ethernet-switching vlan members CHR3-UP-V62
+set interfaces et-0/0/x unit 0 family ethernet-switching vlan members CHR3-OAM-NATIVE-V63"
+How do you create and apply a firewall filter to rate-limit IP alarm traffic?,"Answer:
+set firewall policer 100M if-exceeding bandwidth-limit 100m
+set firewall policer 100M if-exceeding burst-size-limit 125k
+set firewall policer 100M then discard
+set firewall family ethernet-switching filter IP-ALARM-L2-100M  interface-specific
+set firewall family ethernet-switching filter IP-ALARM-L2-100M term A then accept
+set firewall family ethernet-switching filter IP-ALARM-L2-100M  term A then policer 100M
+set interfaces et-0/0/x  unit 0 family ethernet-switching filter input IP-ALARM-L2-100M","set firewall policer 100M if-exceeding bandwidth-limit 100m set firewall policer 100M if-exceeding burst-size-limit 125k set firewall policer 100M then discard
+
+set firewall family ethernet-switching filter IP-ALARM-L2-100M  interface-specific set firewall family ethernet-switching filter IP-ALARM-L2-100M term A then accept set firewall family ethernet-switching filter IP-ALARM-L2-100M  term A then policer 100M <COLOR=(0,176,80)>set firewall family ethernet-switching filter IP-ALARM-L2-100M term A then policer 100M</COLOR> # option if requestor wants more bandwidth : 100M+  policer defined under IPCAM
+
+<COLOR=(0,176,80)>set interfaces</COLOR> et-0/0/0 unit 2001 family inet filter input wan-in-v4-test
+lab@SRBHONTFUC71> show firewall filter ?
+Possible completions:
+<filtername>         Filter name
+IP-ALARM-L2-100M-et-0/0/5.0-i
+application          Owner application
+counter              Counter name
+no-forwarding        No forwarding
+protect-RE-lo0.0-i
+regex                Show filter using regular expression
+version              Show filter version installed
+
+<COLOR=(0,176,80)>set interfaces</COLOR> et-0/0/0 unit 2001 family inet6 filter input wan-in-v6-in
+@SRBHONTFUC71> show firewall filter ?
+Possible completions:
+<filtername>         Filter name
+IP-ALARM-L2-100M-et-0/0/5.0-i
+application          Owner application
+counter              Counter name
+no-forwarding        No forwarding
+protect-RE-lo0.0-i
+regex                Show filter using regular expression
+version              Show filter version installed
+wan-in-v4-test-et-0/0/0.2001-i
+wan-in-v6-in-et-0/0/0.2001-i
+
+<COLOR=(0,176,80)>set interfaces</COLOR> et-0/0/x  unit 0 family ethernet-switching filter input IP-ALARM-L2-100M
+
+@SRBHONTFUC71> show firewall filter wan-in-v6-in-et-0/0/0.2001-i
+Filter: wan-in-v6-in-et-0/0/0.2001-i
+Counters:
+inbound-af11-v6-counter-et-0/0/0.2001-i, Bytes = . inbound-af11-v6-counter-et-0/0/0.2001-i, Packets = 1008. inbound-af11-v6-counter-et-0/0/0.2001-i,  = 8
+
+set firewall family inet filter PROTECT-RE interface-specific set firewall family inet filter PROTECT-RE term Mgt-Access from source-prefix-list oss-subnets
+set firewall family inet filter PROTECT-RE term Mgt-Access from protocol tcp set firewall family inet filter PROTECT-RE term Mgt-Access from destination-port ssh
+set firewall family inet filter PROTECT-RE term Mgt-Access then accept set firewall family inet filter PROTECT-RE term Mgt-ICMP from protocol icmp */separate term in EVO
+set firewall family inet filter PROTECT-RE term Mgt-ICMP from source-prefix-list oss-subnets set firewall family inet filter PROTECT-RE term Mgt-ICMP then accept
+set firewall family inet filter PROTECT-RE term Mgt-SNMP from source-prefix-list oss-subnets set firewall family inet filter PROTECT-RE term Mgt-SNMP from protocol udp
+set firewall family inet filter PROTECT-RE term Mgt-SNMP from destination-port snmp set firewall family inet filter PROTECT-RE term Mgt-SNMP then accept
+set firewall family inet filter PROTECT-RE term Mgt-NTP-TRUST from source-prefix-list oss-subnets set firewall family inet filter PROTECT-RE term Mgt-NTP-TRUST from protocol udp
+set firewall family inet filter PROTECT-RE term Mgt-NTP-TRUST from source-port ntp set firewall family inet filter PROTECT-RE term Mgt-NTP-TRUST then accept
+set firewall family inet filter PROTECT-RE term Mgt-NTP-UNTRUST from protocol udp set firewall family inet filter PROTECT-RE term Mgt-NTP-UNTRUST from destination-port ntp
+set firewall family inet filter PROTECT-RE term Mgt-NTP-UNTRUST then discard set firewall family inet filter PROTECT-RE term other-source from protocol udp
+set firewall family inet filter PROTECT-RE term other-source from protocol tcp set firewall family inet filter PROTECT-RE term other-source from destination-port ssh
+set firewall family inet filter PROTECT-RE term other-source from destination-port telnet set firewall family inet filter PROTECT-RE term other-source from destination-port snmp
+set firewall family inet filter PROTECT-RE term other-source from destination-port http
+set firewall family inet filter PROTECT-RE term other-source from destination-port https set firewall family inet filter PROTECT-RE term other-source then count INVALID-ACCESS set firewall family inet filter PROTECT-RE term other-source then discard
+*/Alternative to allow all local system generated traffic <COLOR=(0,176,80)>set firewall family inet filter PROTECT-RE  term last-local-system then accept</COLOR>
+*/When without above 'last-local-system' them. Apart from OSS MGT, system generate traffic will require to have specific rule to allow two way communication such as BFD, multihop BGP. User would require to add rule if needed
+Example:
+<COLOR=(0,176,80)>set policy-options prefix-list allow-transit-subnets <a.b.c.d>/32</COLOR>
+<COLOR=(0,176,80)>set firewall family inet filter PROTECT-RE  term BFD-PEER from source-prefix-list allow-transit-subnets</COLOR> <COLOR=(0,176,80)>set firewall family inet filter PROTECT-RE  term BFD-PEER from protocol udp</COLOR> <COLOR=(0,176,80)>set firewall family inet filter PROTECT-RE  term BFD-PEER then accept</COLOR> <COLOR=(0,176,80)>set firewall family inet filter PROTECT-RE  term MH-BGP from source-prefix-list allow-transit-subnets</COLOR> <COLOR=(0,176,80)>set firewall family inet filter PROTECT-RE  term MH-BGP from protocol tcp</COLOR> <COLOR=(0,176,80)>set firewall family inet filter PROTECT-RE  term MH-BGP then accept</COLOR> <COLOR=(0,176,80)>set firewall family inet filter PROTECT-RE  term last then reject</COLOR>
+- */ IPV6 filter TBD
+*/ bind firewall filter protect-RE only to interface loopback0 <COLOR=(0,176,80)>set interfaces</COLOR> lo0 unit 0 family inet filter input PROTECT-RE
+
+*/This Firewall Filter applies to Global Routing Layer of CSR
+*/allow OSS Mgt IP subnet */allow SSH from source from RE interface */(adjacent/next hop RE)
+
+Under this Scenario, CSR 'IP Alarm VR' routing layer connects to site IP alarm network elements, and configuration requirement at CSR:
+-       Layer-3 VLAN interface with vlan 20  per IP Alarm VR routing layer, and serves as default Gateway facing IP alarm NEs
+-       a  /29 or /28 LAN subnet to be used as part of vlan 20  per IP Alarm VR routing layer
+-       up to maximum 3 ports configured in Layer-2 access interfaces are to be used for IP alarm purpose, and for more than 3 access ports requirement, additional Layer-2 switch needs to be installed and to be provided by IP alarm team
+-       redistribute VLAN IP subnet to eBGP configuration per IP Alarm VR routing layer
+
+SRBHONTFUC71> show firewall filter wan-in-v4-test-et-0/0/0.2001-i
+Filter: wan-in-v4-test-et-0/0/0.2001-i
+Counters:
+Name                                                                            Bytes              Packets
+inbound-af11-counter-et-0/0/0.2001-i                                            11130                  105
+
+set firewall family inet6 filter wan-in-v6-in interface-specific
+set firewall family inet6 filter wan-in-v6-in term 1 from traffic-class af41  */ define match criteria
+set firewall family inet6 filter wan-in-v6-in term 1 then count inbound-af11-v6-counter
+set firewall family inet6 filter wan-in-v6-in term 1 then log
+set firewall family inet6 filter wan-in-v6-in term 1 then accept
+set firewall family inet6 filter wan-in-v6-in term default then accept
+
+*/ Firewall packet capture filter, typically use for troubleshooting purpose to identify a specific type of IPV4/IPV6 packet passing through an interface
+Example IPV4:
+set firewall family inet filter wan-in-v4-test interface-specific set firewall family inet filter wan-in-v4-test term 1 from dscp af11  */ define match criteria set firewall family inet filter wan-in-v4-test term 1 then count inbound-af11-counter set firewall family inet filter wan-in-v4-test term 1 then log set firewall family inet filter wan-in-v4-test term 1 then accept set firewall family inet filter wan-in-v4-test term default then accept
+
+set policy-options prefix-list CSID-BGP-V1100|1500|1600  <IPV4-SUBNETS>     # BGP peering  per VRF ? set policy-options prefix-list CMU-CSID-V1100|1500|1600  <IPV4-SUBNETS>  # LOOPBACK IP from CMU per VRF ?
+set firewall family inet filter CMU_CSID_V1100|1500|1600-INGR term BGP-IN from source-prefix-list CSID-BGP-V1100|1500|1600
+set firewall family inet filter CMU_CSID_V1100|1500|1600-INGR term BGP-IN then accept set firewall family inet filter CMU_CSID_V1100|1500|1600-INGR term CMU-IN from source-prefix-list CMU-CSID-V1100|1500|1600
+set firewall family inet filter CMU_CSID_V1100|1500|1600-INGR term CMU-IN then accept set firewall family inet filter CMU_CSID_V1100|1500|1600-INGR term LAST then discard
+
+*/ Input to firewall filter, PUBLIC IP subnet for SC-LAN(vlan 40)
+set policy-options prefix-list local-inet-subnets  <local-inet-subnets/prefix>
+set firewall family inet filter ANTI-SPOOF term SC-LAN from source-prefix-list local-inet-subnets set firewall family inet filter ANTI-SPOOF term SC-LAN then discard set firewall family inet filter ANTI-SPOOF term SC-LAN-ACPT then accept
+*/ bind firewall filter input to WAN sub-interfaces */(vlan xxx & vlan yyy)
+<COLOR=(0,176,80)>set interfaces</COLOR> et-0/0/x unit <number> family inet  filter input  ANTI-SPOOF
+
+set class-of-service traffic-control-profiles MBH_100G scheduler-map MBH_66_21_13 set class-of-service traffic-control-profiles MBH_100G shaping-rate 100g set class-of-service traffic-control-profiles MBH_25G scheduler-map MBH_66_21_13 set class-of-service traffic-control-profiles MBH_25G shaping-rate 25g set class-of-service traffic-control-profiles MBH_10G scheduler-map MBH_66_21_13 set class-of-service traffic-control-profiles MBH_10G shaping-rate 10g set class-of-service traffic-control-profiles MBH_1G scheduler-map MBH_66_21_13 set class-of-service traffic-control-profiles MBH_1G shaping-rate 1g set class-of-service traffic-control-profiles MBH_300M scheduler-map MBH_66_21_13 set class-of-service traffic-control-profiles MBH_300M shaping-rate 300m
+
+set chassis alarm management-ethernet link-down ignore <COLOR=(0,176,80)>set interfaces</COLOR> re0:mgmt-0 disable
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x  output-traffic-control-profile MBH_<speed> set class-of-service interfaces et-0/0/x  unit x  rewrite-rules ieee-802.1 MBH-DOT1P */WAN for only to RE/SE or toward spoke CSR */WAN for only to set class-of-service interfaces et-0/0/x  unit y  rewrite-rules ieee-802.1 MBH-DOT1P RE/SE or toward spoke CSR
+.
+
+set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term A from protocol direct set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term A then as-path-prepend ""6xxxx 6xxxx 6xxxx 6xxxx""
+set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term A then accept set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term B from protocol static set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term B then as-path-prepend ""6xxxx 6xxxx 6xxxx 6xxxx""
+set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term B then accept set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm then default-action reject
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR"
+What commands set up TACACS+ authentication and its timeout?,"Answer:
+set system tacplus-server  <tacas1_ip_address>  secret  <key>
+set system tacplus-server  <tacas1_ip_address>  timeout 10
+set system tacplus-server  <tacas1_ip_address>  source-address <loopback0_ip_address>
+set system tacplus-server  <tacas2_ip_address> secret  <key>
+set system tacplus-server  <tacas2_ip_address> timeout 10
+set system tacplus-server  <tacas2_ip_address>  source-address <loopback0_ip_address>
+set system authentication-order tacplus
+set system authentication-order password","set system tacplus-server  <tacas1_ip_address>  secret  <key> set system tacplus-server  <tacas1_ip_address>  timeout 10 set system tacplus-server  <tacas1_ip_address>  source-address <loopback0_ip_address> set system tacplus-server  <tacas2_ip_address> secret  <key> set system tacplus-server  <tacas2_ip_address> timeout 10 set system tacplus-server  <tacas2_ip_address>  source-address <loopback0_ip_address> set system authentication-order tacplus set system authentication-order password
+
+*/ Enter to configuration mode, type top <enter> to system configuration top level
+*/ for root and super-user account, please enter plain text password first time, or alternatively the system generated encrypted password
+set system root-authentication encrypted-password ""<secret>""; ## SECRET-DATA
+set system login user remote  uid 2000
+set system login user remote  class REMOTE
+set system login class REMOTE idle-timeout 15   */ to enable remote user login using tacacs with
+
+set system login class REMOTE permissions all
+set system login class admin-local idle-timeout 15
+*/create super-user access with timeout session
+set system login class admin-local permissions all
+set system login user <admin>  uid 2001
+set system login user <admin>  class admin-local
+set system login user <admin>  encrypted-password ""<secret>""; ## SECRET-DATA
+set system ports console log-out-on-disconnect    */console setting logout after disconnect console
+TELUS Communications Inc.
+
+1.0, Issue Date = October 31, 2023. 1.0, Notes = Initial issue for review. 1.1, Issue Date = December 7, 2023. 1.1, Notes = Update syslog facility override parameters Update tacacs timeout to 10 sec DNS setup as optional (currently not in use)
+The most current version of this document can be found here:
+https://drive.google.com/drive/folders/1Q1Quzq_OE9PkCQkcZRtlztLhYjv_b3I4
+Filename: CSR-ACX7024-configuration-v(latest version)
+Data-IP Master Sparing Guidelines (TELUS Internal)
+https://sharepoint.tsl.telus.com/sites/tsbse/Operational%20Docs/Forms/AllItems.aspx?id=%2Fsites%2Fts bse%2FOperational%20Docs%2FSparing%2FData%2DIP%5FNetwork%5FSparing
+Filename:  UC_Juniper CSR ACX7024 Sparing.xls
+
+set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term A from protocol direct set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term A then as-path-prepend ""6xxxx 6xxxx 6xxxx 6xxxx""
+set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term A then accept set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term B from protocol static set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term B then as-path-prepend ""6xxxx 6xxxx 6xxxx 6xxxx""
+set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm term B then accept set policy-options policy-statement exp-sat-cp|up|oam|tm-ran|ip-alarm then default-action reject
+
+Abstract: This  document  presents  the  technical  description  of  software configuration  on  Juniper  ACX7024  CSR  and  to  be  deployed  on  TELUS Mobility RAN IP backhaul project.
+Author
+Ricky Ip
+Last Revised Date
+January 11, 2024
+Issue
+1.1
+The  information  herein  is  TELUS  Communications  Inc.  confidential  and  proprietary.    Any review, distribution or other use of this information outside of one's scope of employment with TELUS is strictly prohibited.  TELUS Communications Inc. will avail itself of all legal rights and remedies in protecting the confidentiality, property rights, and use of the information.  If you are not a TELUS  employee  and  have  this  information  please  call 1-877-333-8888 immediately.
+
+Example:
+scp /path/junos-evo-install-acx-f-x86-64-22.4R2-S2.4-EVO.iso   lab@remote-csr-ip:/var/tmp/.
+file checksum md5 /var/tmp/junos-evo-install-acx-f-x86-64-22.4R2-S2.4-EVO.iso lab@SRBHONTFUC71> request system software add /var/tmp/junos-evo-install-acx-f-x86-64-22.4R2S2.4-EVO.iso no-validate reboot
+to finish installation.
+** When system reboot to console prompt, it takes about 5 mins to restore all interfaces and routing protocols.
+
+*/ ftp server service to be disable.
+*/ enable when needs it
+*/ by default, sftp to be used for file transfer
+<COLOR=(51,153,102)>set system services</COLOR> ssh root-login deny set system services ssh protocol-version v2 set system services ssh ciphers aes128-ctr set system services ssh ciphers aes192-ctr set system services ssh ciphers aes256-ctr set system services ssh connection-limit 10 set system services ssh rate-limit 10
+set system services netconf ssh set system services ssh sftp-server */use only when file transfer initiates from Jumpbox to CSR, by default CSR will not accept sftp
+
+https://support.juniper.net/support/downloads/?f=a cx
+
+https://www.juniper.net/documentation/us/en/hardware/acx7024/topics/task/acx7024-installing-andconnecting.html
+
+set protocols lldp interface all disable
+
+*/  optional - when this command is being enable, console will no longer be accessible and used with caution !!
+** set system ports console disable
+
+set snmp community  <community string1>  authorization read-only
+set snmp community <community string1>  clients 0.0.0.0/0 restrict
+set snmp community <community string1>  clients <ip address_or_subnet/mask >
+set snmp community  <community string2> authorization read-write
+set snmp community <community string2>  clients 0.0.0.0/0 restrict
+set snmp community <community string2>  clients <ip address_ or_subnet /mask >
+set snmp trap-options source-address <loopback0_ip_address>
+set snmp trap-group <group name> version all
+set snmp trap-group <group name> categories chassis
+set snmp trap-group <group name> categories link
+set snmp trap-group <group name> categories routing
+set snmp trap-group <group name> categories startup
+set snmp trap-group <group name> targets <traps_server1_ip_address>
+set snmp trap-group <group name> targets <traps_server2_ip_address>
+
+CSRs are to be terminated on an edge RE/SE in a distributed topology.  There isn't any dedicated edge RE sending connectivity loss alarm.  Attached diagram shows that CSR has a direct MPLS path to OSS resources such as Nucool probe, Intelliden, NTP, and jumpoint servers etc.
+CSR will have a direct MPLS path to OSS edge RE as well, snmp traps will be forwarded to Nucool probes NNM server (TEMIP) can be set up in a way to monitor connectivity of CSRs. When the NNM server detects connectivity lost on a CSR, it will generate a ticket to NRC.  In reality, EMS to eNodeB will detect connectivity failure much quicker than NNM to CSR.
+**As from Q3-2019, TM-RAN OSS access architecture is to be used for management of remote TM devices instead of TM-VRF (legacy). All the latest CSR in band management will use this new TM-RAN VRF to access OSS network resources for management support.
+
+set system host-name  <CLLI> set system time-zone  <time-zone>
+
+FPC slot 0, PIC slot 0 information:
+Type                             MRATE- 24xSFP28 + 4xQSFP
+State                            Online
+PIC version                    00.00
+Uptime                           66 days, 19 hours, 32 minutes, 53 seconds
+PIC port information:
+
+CSR VRs logical separation:
+Global routing layer of a CSR will be reserved for two major purposes:
+-CSR Management to OSS network resource
+-    Newly adds on Ciena CHR management access to OSS network
+-    SS vDU IPV6 OAM to OSS network
+-    MW management  to OSS network
+-    POE switch management to OSS network
+LTE service VR routing layer on a CSR will be reserved for LTE legacy  service purposes without CP/UP separation like Huawei e/g Node B
+- -eNode B traffic control plane and user plane to EPC and MOCN
+LTE OAM VR routing layer of a CSR will be reserved for management purposes
+- -eNode B OAM traffic to MSO legacy TM ENG
+Site IP alarm VR routing layer of a CSR will be reserved for on site equipment management purposes
+- -TELUS equipment on site monitoring and alarming to MSO OSS network
+Year after year, many TM EMS systems have been moved out from TM ENG to the OSS distribution network environment, and there are requirements to align RAN on cell site equipment to OSS access management standard 'TM-RAN VRF' access architecture as from 2019-Q3.
+During transition period, legacy CSR carries POE switches if applicable will remap from inet.0 to RE/SE TM-RAN VRF '' to allow accessing OSS network resources with non RFC-1918 ipv4 address space.
+When a CSR replacement event happens caused by LCM or access bandwidth upgrade, CSR management configuration will be required to upgrade and align to the latest OSS TM-RAN VRF architecture.
+This change will reserve and limit CSR global routing layer (inet.0) to be used for devices management termination and aggregation such as for down link POE switch, MicroWave, and CSR system management,  which require access to network resources in the OSS network.
+Current services VR instances will not be affected except UMTS/HSPA services to be on its VR, and no longer in the global routing layer.
+In Q4 2020 introducing SAM SUNG BBU, CSR has enabled three addition VRs to support CUPS (Control User Plane Separation)
+-Control Plane (CP VR instance)  to carry RAN control traffic only ex. MME
+-User Plane (UP VR instance) to carry RAN user traffic  ex. GTP-U to PGW
+-OAM (OAM VR instance) to carry RAN BBU management traffic to OSS network
+In Q3 2021 introducing Nokia BBU, and it merges into CUPS (like SAM SUNG RAN) environment as above.
+For typical end-to-end connectivity from a CSR to MSO has shown in diagram.
+Each routing layer in a CSR will associate to a VPRN service instance on an edge RE to MSO RE endpoints. CSR management and LTE traffic will be routed through MPLS to predetermined network resources such as EPC (MME, PGW), OSS, TM MSO network resources, and MOCN partners.
+In order to achieve CUPS, MSO REs will add additional route-targets to MME and PGW routes prefixes, and injects into CP and UP VRs as for RAN CUPS transition.
+
+lab@SRBHONTFUC71> scp lab@<jumpbox-ip:/path/junos-evo-install-acx-f-x86-64-22.4R2-S1.8-EVO.iso /var/tmp/.
+lab@jumpbox's password:
+junos-evo-install-acx-f-x86-64-22.4R2-S1.8-EVO.iso                                                                  100% 1664MB
+84.0MB/s   00:19
+lab@UC-ACX> file checksum md5 /var/tmp/junos-evo-install-acx-f-x86-64-22.4R2-S1.8-EVO.iso
+MD5 (/var/tmp/junos-evo-install-acx-f-x86-64-22.4R2-S1.8-EVO.iso) = 7e5f659bc2c061741d01a234d6079036
+Compare the checksum with download MD5 text, then optional connect to console and  install package and reboot lab@SRBHONTFUC71> request system software add /var/tmp/junos-evo-install-acx-f-x86-64-22.4R2S1.8-EVO.iso no-validate reboot
+From SFTP server push image package down to ACX
+By default ACX incoming sftp is disabled.
+[lab@jumpbox JUNO]$ sftp lab@CSR-IP password: Couldn't read packet: Connection reset by peer subsystem request failed on channel 0 [t061487@SRBHONTFHHP01 JUNO]$
+** First to configure  ACX to access incoming sftp <COLOR=(51,153,102)>set system services</COLOR> ssh sftp-server
+At jumpbox move to JUNO install package directory
+
+In this remote IP CAMs use case, there are POEswitches connecting to CSR RJ45 Ethernet access port hard coded with 100FDX, and VLAN 80 to be used for IP CAM service.  VLAN 80 L3 interface is to be terminated at existing IP_ALARM VR.  The following modification to be applied to CSR and RE or SE.
+
+This document provides step-by-step configuration guide for Juniper ACX7024 router using as a CSR (Cell site router) to support Mobile Backhaul service, and backhaul IP traffic to the nearest TELUS Converged Edge devices (BE/DE/RE) or Collapse Metro SE devices. Low speed access such as bonded-T1, DS3 circuit, or Fast Ethernet (10M/100M), is currently out-of-scope. MBH IP traffic  will  be  forwarded  through  Converged  Edge/Collapse  Metro  Network  infrastructure  to regional TELUS Mobility MSO/NGCO, and MOCN NNIs.
+In typical deployment scenarios, ACX7024 will be used as a standalone, spoke site, and hub site CSR. In some cases, they will be installed at indoor, or in CO (ex. carrier hotels.) Since ACX7024 platform only supports SFP ports, in such case recommends that all connect devices are required to support SFP/SPF+/SPF28/QSFP28 optic.
+Naming Standard: ' UC ' has been reserved for Cell site router use"
+Which CLI entries demonstrate how to configure SNMP on the CSR?,"Answer:
+set snmp community  <community string1>  authorization read-only
+set snmp community <community string1>  clients 0.0.0.0/0 restrict
+set snmp community <community string1>  clients <ip address_or_subnet/mask >
+set snmp community  <community string2> authorization read-write
+set snmp community <community string2>  clients 0.0.0.0/0 restrict
+set snmp community <community string2>  clients <ip address_ or_subnet /mask >
+set snmp trap-options source-address <loopback0_ip_address>
+set snmp trap-group <group name> version all
+set snmp trap-group <group name> categories chassis
+set snmp trap-group <group name> categories link
+set snmp trap-group <group name> categories routing
+set snmp trap-group <group name> categories startup
+set snmp trap-group <group name> targets <traps_server1_ip_address>
+set snmp trap-group <group name> targets <traps_server2_ip_address>","set snmp community  <community string1>  authorization read-only
+set snmp community <community string1>  clients 0.0.0.0/0 restrict
+set snmp community <community string1>  clients <ip address_or_subnet/mask >
+set snmp community  <community string2> authorization read-write
+set snmp community <community string2>  clients 0.0.0.0/0 restrict
+set snmp community <community string2>  clients <ip address_ or_subnet /mask >
+set snmp trap-options source-address <loopback0_ip_address>
+set snmp trap-group <group name> version all
+set snmp trap-group <group name> categories chassis
+set snmp trap-group <group name> categories link
+set snmp trap-group <group name> categories routing
+set snmp trap-group <group name> categories startup
+set snmp trap-group <group name> targets <traps_server1_ip_address>
+set snmp trap-group <group name> targets <traps_server2_ip_address>
+
+CSRs are to be terminated on an edge RE/SE in a distributed topology.  There isn't any dedicated edge RE sending connectivity loss alarm.  Attached diagram shows that CSR has a direct MPLS path to OSS resources such as Nucool probe, Intelliden, NTP, and jumpoint servers etc.
+CSR will have a direct MPLS path to OSS edge RE as well, snmp traps will be forwarded to Nucool probes NNM server (TEMIP) can be set up in a way to monitor connectivity of CSRs. When the NNM server detects connectivity lost on a CSR, it will generate a ticket to NRC.  In reality, EMS to eNodeB will detect connectivity failure much quicker than NNM to CSR.
+**As from Q3-2019, TM-RAN OSS access architecture is to be used for management of remote TM devices instead of TM-VRF (legacy). All the latest CSR in band management will use this new TM-RAN VRF to access OSS network resources for management support.
+
+1.0, Issue Date = October 31, 2023. 1.0, Notes = Initial issue for review. 1.1, Issue Date = December 7, 2023. 1.1, Notes = Update syslog facility override parameters Update tacacs timeout to 10 sec DNS setup as optional (currently not in use)
+The most current version of this document can be found here:
+https://drive.google.com/drive/folders/1Q1Quzq_OE9PkCQkcZRtlztLhYjv_b3I4
+Filename: CSR-ACX7024-configuration-v(latest version)
+Data-IP Master Sparing Guidelines (TELUS Internal)
+https://sharepoint.tsl.telus.com/sites/tsbse/Operational%20Docs/Forms/AllItems.aspx?id=%2Fsites%2Fts bse%2FOperational%20Docs%2FSparing%2FData%2DIP%5FNetwork%5FSparing
+Filename:  UC_Juniper CSR ACX7024 Sparing.xls
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+CSR VRs logical separation:
+Global routing layer of a CSR will be reserved for two major purposes:
+-CSR Management to OSS network resource
+-    Newly adds on Ciena CHR management access to OSS network
+-    SS vDU IPV6 OAM to OSS network
+-    MW management  to OSS network
+-    POE switch management to OSS network
+LTE service VR routing layer on a CSR will be reserved for LTE legacy  service purposes without CP/UP separation like Huawei e/g Node B
+- -eNode B traffic control plane and user plane to EPC and MOCN
+LTE OAM VR routing layer of a CSR will be reserved for management purposes
+- -eNode B OAM traffic to MSO legacy TM ENG
+Site IP alarm VR routing layer of a CSR will be reserved for on site equipment management purposes
+- -TELUS equipment on site monitoring and alarming to MSO OSS network
+Year after year, many TM EMS systems have been moved out from TM ENG to the OSS distribution network environment, and there are requirements to align RAN on cell site equipment to OSS access management standard 'TM-RAN VRF' access architecture as from 2019-Q3.
+During transition period, legacy CSR carries POE switches if applicable will remap from inet.0 to RE/SE TM-RAN VRF '' to allow accessing OSS network resources with non RFC-1918 ipv4 address space.
+When a CSR replacement event happens caused by LCM or access bandwidth upgrade, CSR management configuration will be required to upgrade and align to the latest OSS TM-RAN VRF architecture.
+This change will reserve and limit CSR global routing layer (inet.0) to be used for devices management termination and aggregation such as for down link POE switch, MicroWave, and CSR system management,  which require access to network resources in the OSS network.
+Current services VR instances will not be affected except UMTS/HSPA services to be on its VR, and no longer in the global routing layer.
+In Q4 2020 introducing SAM SUNG BBU, CSR has enabled three addition VRs to support CUPS (Control User Plane Separation)
+-Control Plane (CP VR instance)  to carry RAN control traffic only ex. MME
+-User Plane (UP VR instance) to carry RAN user traffic  ex. GTP-U to PGW
+-OAM (OAM VR instance) to carry RAN BBU management traffic to OSS network
+In Q3 2021 introducing Nokia BBU, and it merges into CUPS (like SAM SUNG RAN) environment as above.
+For typical end-to-end connectivity from a CSR to MSO has shown in diagram.
+Each routing layer in a CSR will associate to a VPRN service instance on an edge RE to MSO RE endpoints. CSR management and LTE traffic will be routed through MPLS to predetermined network resources such as EPC (MME, PGW), OSS, TM MSO network resources, and MOCN partners.
+In order to achieve CUPS, MSO REs will add additional route-targets to MME and PGW routes prefixes, and injects into CP and UP VRs as for RAN CUPS transition.
+
+When there is Converged Edge network access coverage in service location, HSPA/UMTS access service can be terminated on an edged RE network element. A unique regional VPRN service instance for UMTS/HSPA  is to be created across regional edge RE and MSO REs to allow MPLS VPN connections to reach RNCs at regional MSO.
+The attached table shows that all CSRs loopback are to be associated with a specific RT '64490:1' at edge REs, and node B, MW routes are to be associated with another RT associated to regional MSO REs.
+** In Q3 2019, new HSPA to be separated from CSR inet.0 (global) and with its own VR. CSR inet.0 straightly limits to use for IP transport management to OSS network.
+*As from Q3 - 2019, under TM-RAN OSS architecture, CSR MGT loopback assigns a specific RT '852:5946' at edge RE/SE.
+UMTS/HSPA service configuration requirement on a CSR:
+-UMTS/HSPA configuration under global routing layer, and to be moved to its own VR as from Q3-2019
+-a /32 loopback IP assigns from new LTE Mgt IP block for access via TM-RAN
+-enable eBGP protocol  to form adjacency with an edged RE (shut/delete OSPF)
+-no BFD requirement on CSR
+-1x /30 WAN IP subnet from LTE WAN IP block
+-Vlan 2001 is to be used for WAN L3 interface
+-All UMTS/HSPA  Node B, MW, IP subnets assignment to be sourced from UMTS IP block
+-* QoS policy and scheduler to be deployed under LTE, all sub/interfaces should re-configure to use LTE QoS policy
+** UMTS Node B interface connection is required to upgrade from 100M to 1G
+
+(jnx-chassis.txt), jnxFruRemoval = . (jnx-chassis.txt),  = .1.3.6.1.4.1.2636.4.1.5. (jnx-chassis.txt), Snmp Trap = (critical). (jnx-chassis.txt), A jnxFruRemoval trap signifies that the SNMP entity, acting in an agent role, has detected that the specified FRU (Field Replaceable Unit) has been removed from the chassis. The FRU type for this subject. Enumerations: 1 - other 2 - clockGenerator 3 - flexiblePicConcentrato r 4 - switchingAndForwardi ngModule 5 - controlBoard 6 - routingEngine 7 - powerEntryModule 8 - frontPanelModule 9 - switchInterfaceBoard 10 - processorMezzanineB oardForSIB 11 - portInterfaceCard = 12 - craftInterfacePanel 13 - fan 14 - lineCardChassis 15 - forwardingEngineBoar d 16 - protectedSystemDom ain 17 - powerDistributionUnit 18 - powerSupplyModule 19 - switchFabricBoard 20 - adapterCard 21 - ftc 22 - tib
+JUNIPER-MIB (jnx-chassis.txt), 1 = jnxFruInsertion. JUNIPER-MIB (jnx-chassis.txt), 2 = .1.3.6.1.4.1.2636.4.1.6. JUNIPER-MIB (jnx-chassis.txt), 3 = Snmp Trap (Clear). JUNIPER-MIB (jnx-chassis.txt), 4 = A jnxFruInsertion trap signifies that the SNMP entity, acting in an agent role, has detected that the specified FRU (Field Replaceable Unit) has been inserted into the chassis.. JUNIPER-MIB (jnx-chassis.txt), 1 = jnxPowerSupplyInput Failure. JUNIPER-MIB (jnx-chassis.txt), 2 = .1.3.6.1.4.1.2636.4.1.5. JUNIPER-MIB (jnx-chassis.txt), 3 = Snmp Trap (critical) 6 - down (Clear) 2 - running. JUNIPER-MIB (jnx-chassis.txt), 4 = A jnxFruRemoval trap signifies that the SNMP entity, acting in an agent role, has detected that the specified FRU (Field Replaceable Unit) has been removed from the chassis. The operating state of this subject. Enumerations: 1 - unknown 2 - running 3 - ready 4 - reset 5 - runningAtFullSpeed 6 - down 7 - standby. JUNIPER-MIB (jnx-chassis.txt), 1 = jnxFanFailure. JUNIPER-MIB (jnx-chassis.txt), 2 = .1.3.6.1.4.1.2636.4.1.2. JUNIPER-MIB (jnx-chassis.txt), 3 = Snmp Trap (critical) 6 - down (Clear) 2 - running. JUNIPER-MIB (jnx-chassis.txt), 4 = The operating state of this subject. Enumerations: 1 - unknown 2 - running 3 - ready 4 - reset 5 - runningAtFullSpeed
+6 - down
+7 - standby
+
+Abstract: This  document  presents  the  technical  description  of  software configuration  on  Juniper  ACX7024  CSR  and  to  be  deployed  on  TELUS Mobility RAN IP backhaul project.
+Author
+Ricky Ip
+Last Revised Date
+January 11, 2024
+Issue
+1.1
+The  information  herein  is  TELUS  Communications  Inc.  confidential  and  proprietary.    Any review, distribution or other use of this information outside of one's scope of employment with TELUS is strictly prohibited.  TELUS Communications Inc. will avail itself of all legal rights and remedies in protecting the confidentiality, property rights, and use of the information.  If you are not a TELUS  employee  and  have  this  information  please  call 1-877-333-8888 immediately.
+
+To support Ciena CHR (ZTP) requirement, CSR port configuration will keep same L3 subinterfaces configuration
+·         Create direct connected IPV4/IPV6 p2p sub-interface on inet.0 and inet6.0 facing CHR global export direct connected interface IPV4 from inet.0 and BGPv6 on IPV6 from inet6.0 to VPRN/VRF RAN-MGT toward OSS network
+·         Create CHR's CP, UP, RAN-MGT vlans and sub-interfaces to corresponded VRs
+·         Enable IPV4 on sub-interfaces for inet.0, CP, UP VRs
+·         Enable IPV6 on sub-interface for inet6.0 (inet6.0 on CSR for both CHR PnP,  eNB OAM)
+·         Enable BGPv4 on sub-interfaces facing CHR VRs CP, UP (* MD5 password to be sync with CHR)
+·         Enable BGPv6 on sub-interfaces facing CHR Global (* MD5 password to be sync with CHR)
+·         RE/SE RAN-MGT instance to be used to support CHR IPV4/IPV6 Global (MGT, eNB OAM V6) to OSS network resources
+·         NG-RAN-CP instance to be merged to current VPRN/VRF CP and received only default route from RE/SE
+·         NG-RAN-UP instance to be merged to current VPRN/VRF UP and received only default route from RE/SE
+·         No Native vlan on Ciena, CHR uses tagged vlan 127, and physical connection in between either 1G or 10G
+·         PTP traffic G.8275.2 has enabled in VR NG-RAN-CP, this traffic will run between CHRs managed by CHRs team
+
+Under current LTE IP RAN service design, CSR is to create multiple VRFs to separate management, and user traffic functionality. A typical CSR setup will be a HUB and Spoke, standalone design, and with certain IP space requirements as shown.
+
+● eBGP peering are to be enabled in between CSRs and IXRs per vlan
+● CSR import policy to set standard community 'no-export' on all learned CMU routes, and to avoid those routes leak back into TELUS MPLS RAN
+● CSR applies ACL/firewall filter at ingress direction to restrict specific IP flow coming from CMUs such as CMU loopback IPV4 addresses
+● On CSR export policy uplink to RE/SE, apply prefix-list to block/drop CSR to  PWN facing IPsubnets ** since this is a common subnet to be used for all PWN-IOT Private RAN, and it does not need to advertise to MPLS any routing instance.
+
+set protocols bgp group csr-global-v6 description ""global csr layer""
+set protocols bgp group csr-global-v6  type external
+set protocols bgp group csr-global-v6  family inet6 unicast
+set protocols bgp group csr-global-v6  hold-time 45
+set protocols bgp group csr-global-v6  authentication-key  <secret>
+set protocols bgp group csr-global-v6  peer-as 852
+set protocols bgp group csr-global-v6  local-as <local AS#>
+defined, this line  can be skipped
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> irb unit 6x classifiers dscp LTE-SERVICE  #existing classifier in CSR set class-of-service interfaces ge|xe-x/x/x  scheduler-map LTE_66_21_13  #existing scheduler in CSR
+
+*/This Firewall Filter applies to Global Routing Layer of CSR
+*/allow OSS Mgt IP subnet */allow SSH from source from RE interface */(adjacent/next hop RE)
+
+In evaluation of using satellite and SDWAN service to provide MBH backup, CSR is required to setup BGP peering with SDWAN device:
+·         eBGP peering
+o   BGP import policy to set LP = 60 for routes learned from SDWAN;
+o   BGP export policy to set as-path prepend to reduce routing preference via SDWAN path
+·         POC VRFs in scope
+o   NG-RAN-CONTROL
+o   NG-RAN-USER
+o   NG-RAN-OAM
+o   TM-RAN
+o   IP-Alarm
+
+set protocols bgp group csr-global description ""global csr layer""
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set protocols bgp group csr-global type external</COLOR></COLOR>
+set protocols bgp group csr-global family inet unicast
+set protocols bgp group csr-global hold-time 45
+set protocols bgp group csr-global authentication-key  <secret>
+set protocols bgp group csr-global peer-as 852
+set protocols bgp group csr-global local-as <local AS#>   */ if autonomous-system being defined, this line  can
+
+set system host-name  <CLLI> set system time-zone  <time-zone>"
+How do you configure BGP import and export policies for a routing instance?,"Answer:
+set policy-options policy-statement import-routes-bgp-<global / vr-name|red/blue >  term default-v4  from protocol bgp
+set policy-options policy-statement import-routes-bgp-<global / vr-name|red/blue >  term default-v4 from  routefilter 0.0.0.0/0 exact
+set policy-options policy-statement import-routes-bgp-<global / vr-name|red/blue >  term default-v4 then accept
+set policy-options policy-statement import-routes-bgp-<global / vr-name|red/blue >  term default-v4 then localpreference <120 or 80>
+set policy-options policy-statement import-routes-bgp-<global / vr-name|red/blue >  term full-v4  from protocol bgp
+set policy-options policy-statement import-routes-bgp-<global / vr-name|red/blue >  term full-v4 then accept
+set policy-options policy-statement import-routes-bgp-<global / vr-name|red/blue >  term full-v4 then localpreference <120 or 80>
+set policy-options policy-statement import-routes-bgp-<global / vr-name|red/blue >  then default-action reject
+set policy-options policy-statement export-routes-bgpv4-<global / vr-name|red/blue > term STATIC from protocol static
+set policy-options policy-statement export-routes-bgpv4-<global / vr-name|red/blue > term STATIC  from routefilter <IP_subnet/prefix>  exact
+set policy-options policy-statement export-routes-bgpv4-<global / vr-name|red/blue > term STATIC  then accept
+set policy-options policy-statement export-routes-bgpv4-<global / vr-name|red/blue > then default-action reject
+set policy-options policy-statement export-routes-bgpv6-<global / vr-name|red/blue > term STATIC  from protocol static
+set policy-options policy-statement export-routes-bgpv6-<global / vr-name|red/blue > term STATIC  from routefilter <IP_subnet/prefix>  exact
+set policy-options policy-statement export-routes-bgpv6-<global / vr-name|red/blue > term STATIC  then accept
+set policy-options policy-statement export-routes-bgpv6-<global / vr-name|red/blue > then default-action reject
+set policy-options policy-statement import-routes-bgpv6-<global /vr-name|red/blue >  term default-v6 from protocol bgp
+set policy-options policy-statement import-routes-bgpv6-<global / vr-name|red/blue >  term default-v6 from route-filter ::/0  exact
+set policy-options policy-statement import-routes-bgpv6-<global / vr-name|red/blue >  term default-v6  then accept
+set policy-options policy-statement import-routes-bgpv6-<global / vr-name|red/blue >  term default-v6 then localpreference <120 or 80>
+set protocols bgp group csr-global neighbor <RED-RE-IP-address>   import  Import-routes-bgpv4-<global red >
+set protocols bgp group csr-global neighbor <RED-RE-IP-address>  export   export-routes-bgpv4-<global  red >
+set protocols bgp group csr-global neighbor <BLUE-RE-IP-address>  import  Import-routes-bgp-<global blue >
+set protocols bgp group csr-global neighbor <BLUE-RE-IP-address>  export   export-routes-bgp-<global  blue >","*/ Apply red path, and apply import and export policy set protocols bgp group csr-global neighbor <RED-RE-IP-address>   import  Import-routes-bgpv4-<global red > set protocols bgp group csr-global neighbor <RED-RE-IP-address>  export   export-routes-bgpv4-<global  red > */ Apply blue path only if available, and apply import and export policy set protocols bgp group csr-global neighbor <BLUE-RE-IP-address>  import  Import-routes-bgp-<global blue > set protocols bgp group csr-global neighbor <BLUE-RE-IP-address>  export   export-routes-bgp-<global  blue >
+
+*/ Create separate import policy to each global/VRs, receive bgp routes from RE
+*/ Same import policy template for RED and BLUE path, different localpreference value is to be used
+*/ to control routing preference
+*/ for CP, UP, OAM, inet.0, IP-Alarm V4 expect to receive default route v4 if in VRF available, if not full table to be accept
+<COLOR=(0,176,80)>set policy-options policy-statement import-routes-bgp-</COLOR><global /vr-name|red/blue >  term default-v4  from protocol bgp set policy-options policy-statement import-routes-bgp-<global / vr-name|red/blue >  term default-v4 from  routefilter 0.0.0.0/0 exact # to control CSR route-table size to receive default route
+set policy-options policy-statement import-routes-bgp-<global / vr-name|red/blue >  term default-v4 then accept set policy-options policy-statement import-routes-bgp-<global / vr-name|red/blue >  term default-v4 then localpreference <120 or 80>
+*/ local-preference '120' for red path, '80' for blue path
+*/ when there is no default route (such as OAM) on  RE/SE VRF/VPRN instance, import full routes
+set policy-options policy-statement import-routes-bgp-<global /vr-name|red/blue >  term full-v4  from protocol bgp set policy-options policy-statement import-routes-bgp-<global / vr-name|red/blue >  term full-v4 then accept set policy-options policy-statement import-routes-bgp-<global / vr-name|red/blue >  term full-v4 then localpreference <120 or 80>
+- */ local-preference '120' for red path, '80' for blue path
+set policy-options policy-statement import-routes-bgp-<global / vr-name|red/blue >  then default-action reject
+*/ BGPv4 import policy facing CHR (drop default route) <COLOR=(0,176,80)><COLOR=(0,176,80)>set policy-options policy-statement CHR-IMPORT-V4 term drop-default-v4 from protocol bgp</COLOR></COLOR> <COLOR=(0,176,80)><COLOR=(0,176,80)>set policy-options policy-statement CHR-IMPORT-V4 term drop-default-v4 from route-filter 0.0.0.0/0</COLOR> exact</COLOR> <COLOR=(0,176,80)><COLOR=(0,176,80)>set policy-options policy-statement CHR-IMPORT-V4 term drop-default-v4 then reject</COLOR></COLOR> <COLOR=(0,176,80)><COLOR=(0,176,80)>set policy-options policy-statement CHR-IMPORT-V4 then default-action accept</COLOR></COLOR>
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)>set policy-options policy-statement export-routes-bgpv4-</COLOR></COLOR></COLOR></COLOR><global / vr-name|red/blue > term STATIC from protocol static set policy-options policy-statement export-routes-bgpv4-<global / vr-name |red/blue > term STATIC  from routefilter <IP_subnet/prefix>  exact
+set policy-options policy-statement export-routes-bgpv4-<global / vr-name|red/blue > term STATIC  then accept set policy-options policy-statement export-routes-bgpv4-<global / vr-name |red/blue > then default-action reject
+
+set policy-options policy-statement Export-routes-bgp-NG_RAN_CP term DIRECT from protocol direct set policy-options policy-statement Export-routes-bgp-NG_RAN_CP term DIRECT then accept
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)>set policy-options policy-statement export-routes-bgpv6-</COLOR></COLOR></COLOR></COLOR><global / vr-name|red/blue > term STATIC  from protocol static set policy-options policy-statement export-routes-bgpv6-<global / vr-name |red/blue > term STATIC  from routefilter <IP_subnet/prefix>  exact
+set policy-options policy-statement export-routes-bgpv6-<global / vr-name|red/blue > term STATIC  then accept set policy-options policy-statement export-routes-bgpv6-<global / vr-name |red/blue > then default-action reject
+
+set policy-options policy-statement import-routes-bgpv6-<global /vr-name|red/blue >  term default-v6 from protocol bgp set policy-options policy-statement import-routes-bgpv6-<global / vr-name|red/blue >  term default-v6 from route-filter ::/0  exact # to control CSR route-table size to receive default route
+set policy-options policy-statement import-routes-bgpv6-<global / vr-name|red/blue >  term default-v6  then accept set policy-options policy-statement import-routes-bgpv6-<global / vr-name|red/blue >  term default-v6 then localpreference <120 or 80>
+*/ local-preference '120' for red path, '80' for blue path
+
+set protocols bgp group csr-global neighbor <RED-RE-IP-address>   import  Import-routes-bgpv4-<global red > set protocols bgp group csr-global neighbor <RED-RE-IP-address>  export   export-routes-bgpv4-<global  red >
+*/ Apply blue path only if available, and apply import and export policy set protocols bgp group csr-global neighbor <BLUE-RE-IP-address>  import  Import-routes-bgp-<global blue > set protocols bgp group csr-global neighbor <BLUE-RE-IP-address>  export   export-routes-bgp-<global  blue >
+
+*/ Create separate export policy BGPv4 to each global/VR, advertise routes to RE
+*/ Same export policy template for RED and BLUE path, route-filter content will not be the same per VR
+*/ reject direct connected interfaces for that routing layer (ex. PWN P2P subnet)
+<COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)>set policy-options policy-statement export-routes-bgpv4-</COLOR></COLOR></COLOR></COLOR><global / vr-name|red/blue >  term DROP-PRAN from protocol direct
+- */  to control direct prefix to advertise to next hop RE/SE set policy-options policy-statement export-routes-bgpv4-<global / vr-name|red/blue > term DROP-PRAN from
+route-filter <IP_subnet/prefix> exact
+.
+.
+set policy-options policy-statement export-routes-bgpv4-<global / vr-name|red/blue > term DROP-PRAN  from route-filter <IP_subnet/prefix> exact set policy-options policy-statement export-routes-bgpv4-<global / vr-name|red/blue > term DROP-PRAN  then reject
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)>set policy-options policy-statement export-routes-bgpv4-</COLOR></COLOR></COLOR></COLOR><global / vr-name|red/blue >  term DIRECT from protocol direct
+
+set policy-options policy-statement CHR-IMPORT-V6 term drop-default-v6 from protocol bgp set policy-options policy-statement CHR-IMPORT-V6 term drop-default-v6 from route-filter ::/0 exact set policy-options policy-statement CHR-IMPORT-V6 term drop-default-v6 then reject set policy-options policy-statement CHR-IMPORT-V6 then default-action accept
+
+set policy-options policy-statement CHR-IMPORT-V6 term drop-default-v6 from protocol bgp set policy-options policy-statement CHR-IMPORT-V6 term drop-default-v6 from route-filter ::/0 exact set policy-options policy-statement CHR-IMPORT-V6 term drop-default-v6 then reject set policy-options policy-statement CHR-IMPORT-V6 then default-action accept
+
+set policy-options policy-statement CHR-IMPORT-V6 term drop-default-v6 from protocol bgp set policy-options policy-statement CHR-IMPORT-V6 term drop-default-v6 from route-filter ::/0 exact set policy-options policy-statement CHR-IMPORT-V6 term drop-default-v6 then reject set policy-options policy-statement CHR-IMPORT-V6 then default-action accept
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)>set policy-options policy-statement export-routes-bgpv6-</COLOR></COLOR></COLOR></COLOR><global / vr-name|red/blue >  term DIRECT from protocol direct set policy-options policy-statement export-routes-bgpv6-<global / vr-name|red/blue > term DIRECT  from routefilter <IP_subnet/prefix> exact
+.
+.
+set policy-options policy-statement export-routes-bgpv6-<global / vr-name|red/blue > term DIRECT  from routefilter <IP_subnet/prefix> exact set policy-options policy-statement export-routes-bgpv6-<global / vr-name|red/blue > term DIRECT  then accept
+
+set policy-options policy-statement Export-routes-bgp-NG_RAN_CP term X2C-STATIC  from protocol static set policy-options policy-statement Export-routes-bgp-NG_RAN_CP term X2C-STATIC  from prefix-list HUAWEI-X2-LBS
+set policy-options policy-statement Export-routes-bgp-NG_RAN_CP term X2C-STATIC  then metric add 100000
+set policy-options policy-statement Export-routes-bgp-NG_RAN_CP term X2C-STATIC  then accept set policy-options policy-statement Export-routes-bgp-NG_RAN_CP term STATIC from protocol static set policy-options policy-statement Export-routes-bgp-NG_RAN_CP term STATIC then accept set policy-options policy-statement Export-routes-bgp-NG_RAN_CP then default-action reject
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)>set policy-options policy-statement export-routes-bgpv4-</COLOR></COLOR></COLOR></COLOR><global / vr-name|red/blue > term DIRECT  from routefilter <IP_subnet/prefix> exact
+.
+.
+set policy-options policy-statement export-routes-bgpv4-<global / vr-name|red/blue > term DIRECT   from routefilter <IP_subnet/prefix> exact set policy-options policy-statement export-routes-bgpv4-<global / vr-name|red/blue > term DIRECT   then accept
+
+set policy-options community NO-EXPORT members no-export set policy-options policy-statement IMPORT-LP60-NO-EXP term A from protocol bgp set policy-options policy-statement IMPORT-LP60-NO-EXP term A then local-preference 60 set policy-options policy-statement IMPORT-LP60-NO-EXP term A then community set NO-EXPORT set policy-options policy-statement IMPORT-LP60-NO-EXP term A then accept set policy-options policy-statement IMPORT-LP60-NO-EXP then default-action reject
+
+set policy-options community  clear_all members *:* set policy-options community NO-EXPORT members no-export
+# tagged no-export community for all routes in from PIOT routing environment
+set policy-options policy-statement PIOT-IPS-IMP term ING-NO-EXP from protocol bgp set policy-options policy-statement PIOT-IPS-IMP term ING-NO-EXP then community set NO-EXPORT set policy-options policy-statement PIOT-IPS-IMP term ING-NO-EXP then accept set policy-options policy-statement PIOT-IPS-IMP then default-action reject
+
+set policy-options policy-statement import-routes-bgpv6-<global /vr-name|red/blue >  term full-v6 from protocol bgp set policy-options policy-statement import-routes-bgpv6-<global / vr-name|red/blue >  term full-v6  then accept set policy-options policy-statement import-routes-bgpv6-<global / vr-name|red/blue >  term full-v6 then localpreference <120 or 80>
+
+*/ Create separate export policy BGPv6 to each global/VR, advertise routes to RE
+*/ Same export policy template for RED and BLUE path, route-filter content will not be the same per VR
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)>set policy-options policy-statement export-routes-bgpv6-</COLOR></COLOR></COLOR></COLOR><global / vr-name|red/blue >  term DROP from protocol direct set policy-options policy-statement export-routes-bgpv6-<global / vr-name|red/blue > term DROP  from routefilter <IP_subnet/prefix> exact
+.
+.
+set policy-options policy-statement export-routes-bgpv6-<global / vr-name|red/blue > term DROP  from routefilter <IP_subnet/prefix> exact set policy-options policy-statement export-routes-bgpv6-<global / vr-name|red/blue > term DROP then reject"
+What is the Junos CLI syntax to display the current system CPU utilization?,Answer: show chassis routing-engine,"Kernel                     6 percent
+Interrupt                  1 percent
+Idle                      87 percent
+15 min CPU utilization:
+User                       7 percent
+Background                 0 percent
+Kernel                     6 percent
+Interrupt                  1 percent
+Idle                      87 percent
+Model                          RE-ACX-7024
+Serial ID                      FL3822AN0062
+Start time                     2023-10-11 14:17:00 EDT
+Uptime                         8 days, 20 hours, 40 minutes, 11 seconds
+Load averages:                 1 minute   5 minute  15 minute
+1.59       1.27       1.17
+Last reboot reason             software reboot
+JUNIPER-IF-MIB (jnx-if-extensions), ifIn1SecOctets = ifOut1SecOctets. JUNIPER-IF-MIB (jnx-if-extensions), .1.3.6.1.4.1.2636. 3.3.1.1.2 = .1.3.6.1.4.1.2636. 3.3.1.1.5. JUNIPER-IF-MIB (jnx-if-extensions), Green <=60% ; Yellow 60-70%; Red > 70% = Green <=60% ; Yellow 60-70%; Red > 70%. JUNIPER-IF-MIB (jnx-if-extensions), Port Utilization inbound The number of octets per second (Bps, Bytes per second), delivered by this (sub-)layer to its next higher (sub-)layer. = Port Utilization outbound The number of octets per second (Bps, Bytes per second), delivered by this (sub-)layer to its next lower (sub-)layer.
+Example :SRBHONTFUC72> show interfaces et-0/0/4 | match rate
+Input rate     : 5744 bps (8 pps)
+Output rate    : 4936 bps (7 pps)
+
+Juniper MIBs download URL:  https://apps.juniper.net/mib- explorer/download?software=Junos%20OS%20Evolved
+Jnx-chassis.mib (JUNIPER-MIB), Module Name = jnxOperatingCPU. Jnx-chassis.mib (JUNIPER-MIB), OID = .1.3.6.1.4.1.2636. 3.1.13.1.8. Jnx-chassis.mib (JUNIPER-MIB), Unit = percentage. Jnx-chassis.mib (JUNIPER-MIB), Monitoring = Green <=60% ; Yellow 60-70%; Red > 70%. Jnx-chassis.mib (JUNIPER-MIB), Description = The CPU utilization in percentage of this subject. Zero if unavailable or inapplicable.. Jnx-chassis.mib (JUNIPER-MIB), Module Name = jnxOperatingMemo ry. Jnx-chassis.mib (JUNIPER-MIB), OID = .1.3.6.1.4.1.2636. 3.1.13.1.15. Jnx-chassis.mib (JUNIPER-MIB), Unit = Megabytes. Jnx-chassis.mib (JUNIPER-MIB), Monitoring = Green <=60% ; Yellow 60-70%; Red > 70% 16GB installed. Jnx-chassis.mib (JUNIPER-MIB), Description = The installed memory size in Megabytes of this subject. Zero if unavailable or Inapplicable.. Jnx-chassis.mib (JUNIPER-MIB), Module Name = jnxOperatingBuffer. Jnx-chassis.mib (JUNIPER-MIB), OID = .1.3.6.1.4.1.2636. 3.1.13.1.11. Jnx-chassis.mib (JUNIPER-MIB), Unit = percentage. Jnx-chassis.mib (JUNIPER-MIB), Monitoring = Green <=60% ; Yellow 60-70%; Red > 70%. Jnx-chassis.mib (JUNIPER-MIB), Description = The buffer pool utilization in percentage of this subject. Zero if unavailable or inapplicable.
+Example :  show chassis routing-engine
+Routing Engine status:
+Slot 0:
+Current state                  Master
+Election priority              Master (default)
+Temperature                 30 degrees C / 86 degrees F
+CPU temperature             30 degrees C / 86 degrees F
+DRAM                      10870 MB (16384 MB installed)
+Memory utilization          33 percent
+5 sec CPU utilization:
+User                       7 percent
+Background                 0 percent
+Kernel                     6 percent
+Interrupt                  1 percent
+Idle                      85 percent
+1 min CPU utilization:
+User                       7 percent
+Background                 0 percent
+Kernel                     6 percent
+Interrupt                  1 percent
+Idle                      87 percent
+5 min CPU utilization:
+User                       7 percent
+Background                 0 percent
+
+set class-of-service traffic-control-profiles MBH_100G scheduler-map MBH_66_21_13 set class-of-service traffic-control-profiles MBH_100G shaping-rate 100g set class-of-service traffic-control-profiles MBH_25G scheduler-map MBH_66_21_13 set class-of-service traffic-control-profiles MBH_25G shaping-rate 25g set class-of-service traffic-control-profiles MBH_10G scheduler-map MBH_66_21_13 set class-of-service traffic-control-profiles MBH_10G shaping-rate 10g set class-of-service traffic-control-profiles MBH_1G scheduler-map MBH_66_21_13 set class-of-service traffic-control-profiles MBH_1G shaping-rate 1g set class-of-service traffic-control-profiles MBH_300M scheduler-map MBH_66_21_13 set class-of-service traffic-control-profiles MBH_300M shaping-rate 300m
+
+<COLOR=(0,176,80)>set interfaces</COLOR> ge|xe-0/x/x   unit <number> family inet filter input CMU_CSID_V1100|1500|1600-INGR
+
+https://www.juniper.net/documentation/us/en/hardware/acx7024/index.html
+
+Junos Evolved SR, Description = 22.4R2-S1-EVO. Junos Evolved SR, Replacement = . Junos Evolved SR, Description = . Junos Evolved SR, EOE = 12/22/2025. Junos Evolved SR, EOS = 06/22/2026
+
+https://www.juniper.net/documentation/us/en/hardware/acx7024/topics/concept/acx7024-coolingsystem.html
+
+(jnx-chassis.txt), jnxFruRemoval = . (jnx-chassis.txt),  = .1.3.6.1.4.1.2636.4.1.5. (jnx-chassis.txt), Snmp Trap = (critical). (jnx-chassis.txt), A jnxFruRemoval trap signifies that the SNMP entity, acting in an agent role, has detected that the specified FRU (Field Replaceable Unit) has been removed from the chassis. The FRU type for this subject. Enumerations: 1 - other 2 - clockGenerator 3 - flexiblePicConcentrato r 4 - switchingAndForwardi ngModule 5 - controlBoard 6 - routingEngine 7 - powerEntryModule 8 - frontPanelModule 9 - switchInterfaceBoard 10 - processorMezzanineB oardForSIB 11 - portInterfaceCard = 12 - craftInterfacePanel 13 - fan 14 - lineCardChassis 15 - forwardingEngineBoar d 16 - protectedSystemDom ain 17 - powerDistributionUnit 18 - powerSupplyModule 19 - switchFabricBoard 20 - adapterCard 21 - ftc 22 - tib
+JUNIPER-MIB (jnx-chassis.txt), 1 = jnxFruInsertion. JUNIPER-MIB (jnx-chassis.txt), 2 = .1.3.6.1.4.1.2636.4.1.6. JUNIPER-MIB (jnx-chassis.txt), 3 = Snmp Trap (Clear). JUNIPER-MIB (jnx-chassis.txt), 4 = A jnxFruInsertion trap signifies that the SNMP entity, acting in an agent role, has detected that the specified FRU (Field Replaceable Unit) has been inserted into the chassis.. JUNIPER-MIB (jnx-chassis.txt), 1 = jnxPowerSupplyInput Failure. JUNIPER-MIB (jnx-chassis.txt), 2 = .1.3.6.1.4.1.2636.4.1.5. JUNIPER-MIB (jnx-chassis.txt), 3 = Snmp Trap (critical) 6 - down (Clear) 2 - running. JUNIPER-MIB (jnx-chassis.txt), 4 = A jnxFruRemoval trap signifies that the SNMP entity, acting in an agent role, has detected that the specified FRU (Field Replaceable Unit) has been removed from the chassis. The operating state of this subject. Enumerations: 1 - unknown 2 - running 3 - ready 4 - reset 5 - runningAtFullSpeed 6 - down 7 - standby. JUNIPER-MIB (jnx-chassis.txt), 1 = jnxFanFailure. JUNIPER-MIB (jnx-chassis.txt), 2 = .1.3.6.1.4.1.2636.4.1.2. JUNIPER-MIB (jnx-chassis.txt), 3 = Snmp Trap (critical) 6 - down (Clear) 2 - running. JUNIPER-MIB (jnx-chassis.txt), 4 = The operating state of this subject. Enumerations: 1 - unknown 2 - running 3 - ready 4 - reset 5 - runningAtFullSpeed
+6 - down
+7 - standby
+
+<COLOR=(0,176,80)>set interfaces</COLOR> et-0/0/y description 'port description'
+set interfaces et-0/0/y  hierarchical-scheduler
+set interfaces et-0/0/y  flexible-vlan-tagging
+set interfaces et-0/0/y  speed 1g
+set interfaces et-0/0/y  mtu 9216
+set interfaces et-0/0/y  encapsulation flexible-ethernet-services
+set interfaces et-0/0/y  unit 0 vlan-id 711  # dummy vlan for analyzer output
+set interfaces et-0/0/y  unit 0 family ethernet-switching
+
+https://support.juniper.net/support/downloads/?f=a cx
+
+Juniper MIBs download URL:  https://apps.juniper.net/mib- explorer/download?software=Junos%20OS%20Evolved
+BGP4-MIB (bgpmib.txt), Module Name = bgpPeerState. BGP4-MIB (bgpmib.txt), OID = .1.3.6.1.2.1.15.3.1.2. BGP4-MIB (bgpmib.txt), Monitoring = 2 - connect 3 - active (critical) 6 - established (Clear). BGP4-MIB (bgpmib.txt), Description = The BGP peer connection state. Enumerations: 1 - idle 2 - connect 3 - active 4 - opensent 5 - openconfirm 6 - established. BGP4-V2-MIB- JUNIPER (jnx-bgpmib2.txt), Module Name = jnxBgpM2BackwardTr ansition. BGP4-V2-MIB- JUNIPER (jnx-bgpmib2.txt), OID = .1.3.6.1.4.1.2636.5.1.1 .1.0.2. BGP4-V2-MIB- JUNIPER (jnx-bgpmib2.txt), Monitoring = Snmp trap. BGP4-V2-MIB- JUNIPER (jnx-bgpmib2.txt), Description = The BGPBackwardTransitio n Event is generated when the BGP FSM moves from a higher numbered state to a lower numbered state.. BGP4-V2-MIB- JUNIPER (jnx-bgpmib2.txt), Module Name = jnxBgpM2Established. BGP4-V2-MIB- JUNIPER (jnx-bgpmib2.txt), OID = .1.3.6.1.4.1.2636.5.1.1 .1.0.1. BGP4-V2-MIB- JUNIPER (jnx-bgpmib2.txt), Monitoring = 6 - established (clear). BGP4-V2-MIB- JUNIPER (jnx-bgpmib2.txt), Description = The BGP Established event is generated when the BGP FSM enters the ESTABLISHED state.. SNMPv2-MIB (rfc1907.txt), Module Name = coldStart. SNMPv2-MIB (rfc1907.txt), OID = .1.3.6.1.6.3.1.1.5.1. SNMPv2-MIB (rfc1907.txt), Monitoring = Snmp trap (warning). SNMPv2-MIB (rfc1907.txt), Description = A coldStart trap signifies that the SNMPv2 entity, acting in an agent role, is reinitializing itself and that its configuration may have been altered.. IPV6-MIB (rfc2465.txt), Module Name = ipv6IfOperStatus. IPV6-MIB (rfc2465.txt), OID = .1.3.6.1.2.1.55.1.5.1.1 0. IPV6-MIB (rfc2465.txt), Monitoring = Snmp trap (critical) - 2 down (clear ) - 1 up. IPV6-MIB (rfc2465.txt), Description = PORT/INTERFACE STATE
+
+*/ default dscp map from Juno software, which classified two dscp= be, and dscp=NC1
+*/ there is requirement to re-organize all dscp code-points to TELUS defined new forwarding classes for LTE: BE,AF2,AF3,EF,signaling_voice
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> irb unit 6x classifiers dscp LTE-SERVICE  #existing classifier in CSR set class-of-service interfaces ge|xe-x/x/x  scheduler-map LTE_66_21_13  #existing scheduler in CSR
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x unit <id> classifiers dscp MBH_V4  #existing classifier in CSR set class-of-service interfaces et-0/0/x unit <id> classifiers dscp-ipv6 MBH_V6 # IPV6 classifier in CSR set class-of-service interfaces et-0/0/x  output-traffic-control-profile MBH_<speed>G  #existing scheduler in CSR
+
+lab@SRBHONTFUC71> show system software list
+------------------------------- node: re0
+-------------------------------
+Active boot device is primary: /dev/mmcblk0
+List of installed version(s) :
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> ge|xe-0/x/x   scheduler-map LTE_66_21_13 set class-of-service interfaces ge|xe-0/x/x   unit  <number>  classifiers dscp LTE-SERVICE
+set class-of-service interfaces ge|xe-0/x/x  unit  <number>    rewrite-rules ieee-802.1 LTE-SERVICE
+
+*/ create a dummy vlan on input interface ; ex. dummy vlan 99
+```
+<COLOR=(0,176,80)>set interfaces</COLOR> et-0/0/x description 'port description' set interfaces et-0/0/x hierarchical-scheduler set interfaces et-0/0/x flexible-vlan-tagging set interfaces et-0/0/x speed 10g set interfaces et-0/0/x mtu 9216 set interfaces et-0/0/x encapsulation flexible-ethernet-services set interfaces et-0/0/x unit 0 description ""dummy vlan for analyzer"" set interfaces et-0/0/x unit 0 vlan-id 99  # it can be any unused vlan on this interface
+```
+set interfaces et-0/0/x unit 0 family ethernet-switching"
+Are there any CLIs in red?,"Yes, there are several CLIs in red. Here are the CLIs in red:
+set policy-options policy-statement CHR-IMPORT-V4 term drop-default-v4 from protocol bgp
+set policy-options policy-statement CHR-IMPORT-V4 term drop-default-v4 from route-filter 0.0.0.0/0 exact
+set policy-options policy-statement CHR-IMPORT-V4 term drop-default-v4 then reject
+set policy-options policy-statement CHR-IMPORT-V4 then default-action accept
+set class-of-service interfaces
+set policy-options policy-statement export-routes-bgpv4-<global / vr-name|red/blue >  term DIRECT from protocol direct
+set policy-options policy-statement CHR-IMPORT-V4 term drop-default-v4 from protocol bgp
+set policy-options policy-statement CHR-IMPORT-V4 term drop-default-v4 from route-filter 0.0.0.0/0 exact
+set policy-options policy-statement CHR-IMPORT-V4  term drop-default-v4 then reject
+set policy-options policy-statement CHR-IMPORT-V4  then default-action accept
+set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > family inet6 unicast
+set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > description ""CSR to <RE>""
+set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > hold-time 45
+set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > authentication-key <secret>
+set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > peer-as 852
+set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > local-as <AS#> 
+set routing-instances <VRF-NAME> protocols bgp group < VR-group-NAME > neighbor <RED-RE-IPaddress> import  Import-routes-bgp-<vr-x-v6-red >
+set routing-instances <VRF-NAME> protocols bgp group < VR-group-NAME > neighbor <RED-RE-IPaddress>  export export-routes-bgp-<vr-x-v6-red>
+set protocols bgp group csr-global type external
+set class-of-service interfaces
+set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > family inet unicast
+set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > description ""CSR to <RE>""
+set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > hold-time 45
+set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > authentication-key <secret>
+set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > peer-as 852
+set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > local-as <AS#> 
+set routing-instances <VRF-NAME> protocols bgp group < VR-group-NAME > neighbor <RED-RE-IPaddress> import  Import-routes-bgp-<vr-x-red >
+set routing-instances <VRF-NAME> protocols bgp group < VR-group-NAME > neighbor <RED-RE-IPaddress>  export export-routes-bgp-<vr-x-red>
+set interfaces
+set class-of-service interfaces
+set routing-instances sc-inet instance-type virtual-router
+set routing-instances sc-inet description <description>
+set routing-instances sc-inet system services dhcp-local-server group local-sc-pool interface irb.40
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet network <public_IP_subnet/prefix>
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet range range1 low <public_IP_address(low)>
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet range range1 high <public_IP_address(high)>
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet dhcp-attributes maximum-lease-time 259200
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet dhcp-attributes nameserver <x.x.x.x>
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet dhcp-attributes nameserver <x.x.x.x>
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet dhcp-attributes router <public_IP_address>
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet dhcp-attributes option 3 ip-address <public_IP_address>
+set routing-instances sc-inet interface et-0/0/x.2xxx
+set routing-instances sc-inet interface et-0/0/x.3xxx
+set routing-instances sc-inet interface irb.40
+set interfaces
+set protocols bgp group OAM-CHR neighbor IPV6-address  authentication-key ?","<COLOR=(0,176,80)><COLOR=(0,176,80)>set policy-options policy-statement CHR-IMPORT-V4 term drop-default-v4 from protocol bgp</COLOR></COLOR> <COLOR=(0,176,80)><COLOR=(0,176,80)>set policy-options policy-statement CHR-IMPORT-V4 term drop-default-v4 from route-filter 0.0.0.0/0</COLOR> exact</COLOR> <COLOR=(0,176,80)><COLOR=(0,176,80)>set policy-options policy-statement CHR-IMPORT-V4 term drop-default-v4 then reject</COLOR></COLOR> <COLOR=(0,176,80)><COLOR=(0,176,80)>set policy-options policy-statement CHR-IMPORT-V4 then default-action accept</COLOR></COLOR>
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> irb unit 6x classifiers dscp LTE-SERVICE  #existing classifier in CSR set class-of-service interfaces ge|xe-x/x/x  scheduler-map LTE_66_21_13  #existing scheduler in CSR
+
+set class-of-service schedulers L-AF1 transmit-rate percent 13
+set class-of-service schedulers L-AF1 drop-profile-map loss-priority high protocol any drop-profile high_drop set class-of-service schedulers L-AF2_21_HS transmit-rate percent 21
+set class-of-service schedulers L-AF2_21_HS drop-profile-map loss-priority high protocol any drop-profile high_drop
+set class-of-service schedulers L-AF3_66_HS transmit-rate percent 66
+set class-of-service schedulers L-AF3_66_HS drop-profile-map loss-priority high protocol any drop-profile high_drop
+set class-of-service schedulers L-BE transmit-rate remainder
+set class-of-service schedulers L-EF priority strict-high
+set class-of-service schedulers RP priority strict-high
+set class-of-service schedulers Signaling_voice priority strict-high
+
+*/ for DWDM 10G tunable optic transceiver , setup wavelength associate to MUX assignment.
+<COLOR=(0,176,80)>set interfaces</COLOR> et-0/0/x optics-options wavelength 15xx.xx */reference to MUX port spec. set interfaces et-0/0/x optics-options laser-enable
+*/ ports 0-3 (40G/100G); ports 4 - 26 (1G/10G/25G), port 27 reserved */ vlan 2001-2004 range for red uplink, 3001-3004 range for blue uplink
+delete set interfaces et-0/0/x   # to remove default configuration unit 0
+set interfaces et-0/0/x hierarchical-scheduler
+set interfaces et-0/0/x flexible-vlan-tagging
+set interfaces et-0/0/x mtu 9216
+set interfaces et-0/0/x encapsulation flexible-ethernet-services
+set interfaces et-0/0/x ether-options no-auto-negotiation */refer to LAN interfaces table
+set interfaces et-0/0/x ether-options no-flow-control
+set interfaces et-0/0/x description ""port  description""
+set interfaces et-0/0/x speed  1g/10g/25g
+*/refer to optic speed
+set interfaces et-0/0/x unit <uid> description ""subif description""
+set interfaces et-0/0/x unit <uid> vlan-id  <vid>
+set interfaces et-0/0/x unit <uid> family inet address IPV4_address/mask
+set interfaces et-0/0/x unit <uid> family inet6 address IPV6_address/64
+.
+.
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)>set policy-options policy-statement export-routes-bgpv4-</COLOR></COLOR></COLOR></COLOR><global / vr-name|red/blue >  term DIRECT from protocol direct
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set policy-options policy-statement CHR-IMPORT-V4 term drop-default-v4 from protocol bgp</COLOR></COLOR> <COLOR=(0,176,80)><COLOR=(0,176,80)>set policy-options policy-statement CHR-IMPORT-V4 term drop-default-v4 from route-filter 0.0.0.0/0</COLOR> exact</COLOR> set policy-options policy-statement CHR-IMPORT-V4  term drop-default-v4 then reject set policy-options policy-statement CHR-IMPORT-V4  then default-action accept
+
+https://support.juniper.net/support/downloads/?f=a cx
+
+Juniper MIBs download URL:  https://apps.juniper.net/mib- explorer/download?software=Junos%20OS%20Evolved
+Jnx-chassis.mib (JUNIPER-MIB), Module Name = jnxOperatingCPU. Jnx-chassis.mib (JUNIPER-MIB), OID = .1.3.6.1.4.1.2636. 3.1.13.1.8. Jnx-chassis.mib (JUNIPER-MIB), Unit = percentage. Jnx-chassis.mib (JUNIPER-MIB), Monitoring = Green <=60% ; Yellow 60-70%; Red > 70%. Jnx-chassis.mib (JUNIPER-MIB), Description = The CPU utilization in percentage of this subject. Zero if unavailable or inapplicable.. Jnx-chassis.mib (JUNIPER-MIB), Module Name = jnxOperatingMemo ry. Jnx-chassis.mib (JUNIPER-MIB), OID = .1.3.6.1.4.1.2636. 3.1.13.1.15. Jnx-chassis.mib (JUNIPER-MIB), Unit = Megabytes. Jnx-chassis.mib (JUNIPER-MIB), Monitoring = Green <=60% ; Yellow 60-70%; Red > 70% 16GB installed. Jnx-chassis.mib (JUNIPER-MIB), Description = The installed memory size in Megabytes of this subject. Zero if unavailable or Inapplicable.. Jnx-chassis.mib (JUNIPER-MIB), Module Name = jnxOperatingBuffer. Jnx-chassis.mib (JUNIPER-MIB), OID = .1.3.6.1.4.1.2636. 3.1.13.1.11. Jnx-chassis.mib (JUNIPER-MIB), Unit = percentage. Jnx-chassis.mib (JUNIPER-MIB), Monitoring = Green <=60% ; Yellow 60-70%; Red > 70%. Jnx-chassis.mib (JUNIPER-MIB), Description = The buffer pool utilization in percentage of this subject. Zero if unavailable or inapplicable.
+Example :  show chassis routing-engine
+Routing Engine status:
+Slot 0:
+Current state                  Master
+Election priority              Master (default)
+Temperature                 30 degrees C / 86 degrees F
+CPU temperature             30 degrees C / 86 degrees F
+DRAM                      10870 MB (16384 MB installed)
+Memory utilization          33 percent
+5 sec CPU utilization:
+User                       7 percent
+Background                 0 percent
+Kernel                     6 percent
+Interrupt                  1 percent
+Idle                      85 percent
+1 min CPU utilization:
+User                       7 percent
+Background                 0 percent
+Kernel                     6 percent
+Interrupt                  1 percent
+Idle                      87 percent
+5 min CPU utilization:
+User                       7 percent
+Background                 0 percent
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)>set routing-instances</COLOR></COLOR></COLOR></COLOR></COLOR> <VR-NAME> protocols bgp group < VR-group-NAME > family inet6 unicast set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > description ""CSR to <RE>"" set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > hold-time 45 set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > authentication-key <secret> set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > peer-as 852 set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > local-as <AS#> */ if autonomous-system being defined, this line  can be skipped
+*/configure red ebgp neighbor under routing-instance, and apply routes import/export policy set routing-instances <VRF-NAME> protocols bgp group < VR-group-NAME > neighbor <RED-RE-IPaddress> import  Import-routes-bgp-<vr-x-v6-red > set routing-instances <VRF-NAME> protocols bgp group < VR-group-NAME > neighbor <RED-RE-IPaddress>  export export-routes-bgp-<vr-x-v6-red>
+
+set protocols bgp group csr-global description ""global csr layer""
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set protocols bgp group csr-global type external</COLOR></COLOR>
+set protocols bgp group csr-global family inet unicast
+set protocols bgp group csr-global hold-time 45
+set protocols bgp group csr-global authentication-key  <secret>
+set protocols bgp group csr-global peer-as 852
+set protocols bgp group csr-global local-as <local AS#>   */ if autonomous-system being defined, this line  can
+
+Kernel                     6 percent
+Interrupt                  1 percent
+Idle                      87 percent
+15 min CPU utilization:
+User                       7 percent
+Background                 0 percent
+Kernel                     6 percent
+Interrupt                  1 percent
+Idle                      87 percent
+Model                          RE-ACX-7024
+Serial ID                      FL3822AN0062
+Start time                     2023-10-11 14:17:00 EDT
+Uptime                         8 days, 20 hours, 40 minutes, 11 seconds
+Load averages:                 1 minute   5 minute  15 minute
+1.59       1.27       1.17
+Last reboot reason             software reboot
+JUNIPER-IF-MIB (jnx-if-extensions), ifIn1SecOctets = ifOut1SecOctets. JUNIPER-IF-MIB (jnx-if-extensions), .1.3.6.1.4.1.2636. 3.3.1.1.2 = .1.3.6.1.4.1.2636. 3.3.1.1.5. JUNIPER-IF-MIB (jnx-if-extensions), Green <=60% ; Yellow 60-70%; Red > 70% = Green <=60% ; Yellow 60-70%; Red > 70%. JUNIPER-IF-MIB (jnx-if-extensions), Port Utilization inbound The number of octets per second (Bps, Bytes per second), delivered by this (sub-)layer to its next higher (sub-)layer. = Port Utilization outbound The number of octets per second (Bps, Bytes per second), delivered by this (sub-)layer to its next lower (sub-)layer.
+Example :SRBHONTFUC72> show interfaces et-0/0/4 | match rate
+Input rate     : 5744 bps (8 pps)
+Output rate    : 4936 bps (7 pps)
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set class-of-service interfaces</COLOR></COLOR> et-0/0/x  unit x classifiers dscp MBH_V4 set class-of-service interfaces et-0/0/x  unit y  classifiers dscp-ipv6 MBH_V6
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)>set routing-instances</COLOR></COLOR></COLOR></COLOR></COLOR> <VR-NAME> protocols bgp group < VR-group-NAME > family inet unicast set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > description ""CSR to <RE>"" set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > hold-time 45 set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > authentication-key <secret> set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > peer-as 852 set routing-instances <VR-NAME> protocols bgp group < VR-group-NAME > local-as <AS#> */ if autonomous-system being defined, this line  can be skipped
+*/configure red ebgp neighbor under routing-instance, and apply routes import/export policy set routing-instances <VRF-NAME> protocols bgp group < VR-group-NAME > neighbor <RED-RE-IPaddress> import  Import-routes-bgp-<vr-x-red > set routing-instances <VRF-NAME> protocols bgp group < VR-group-NAME > neighbor <RED-RE-IPaddress>  export export-routes-bgp-<vr-x-red>
+
+set class-of-service forwarding-classes class L-AF1 queue-num 1 set class-of-service forwarding-classes class L-AF2 queue-num 3 set class-of-service forwarding-classes class L-AF3 queue-num 4 set class-of-service forwarding-classes class L-BE queue-num 0 set class-of-service forwarding-classes class L-EF queue-num 5
+set class-of-service forwarding-classes class Signaling_voice queue-num 6 set class-of-service forwarding-classes class RP queue-num 7
+
+set protocols bgp group csr-global-v6 description ""global csr layer""
+set protocols bgp group csr-global-v6  type external
+set protocols bgp group csr-global-v6  family inet6 unicast
+set protocols bgp group csr-global-v6  hold-time 45
+set protocols bgp group csr-global-v6  authentication-key  <secret>
+set protocols bgp group csr-global-v6  peer-as 852
+set protocols bgp group csr-global-v6  local-as <local AS#>
+defined, this line  can be skipped
+
+set protocols bgp group OAM-CHR type external
+set protocols bgp group OAM-CHR hold-time 45
+set protocols bgp group OAM-CHR log-updown
+set protocols bgp group OAM-CHR import CHR-IMPORT-V6  # accept all route, excluded default route set protocols bgp group OAM-CHR family inet6 unicast
+set protocols bgp group OAM-CHR peer-as 65xxx # private AS of CHR
+set protocols bgp group OAM-CHR neighbor IPV6-address  description ""description-CHR-1 OAM""
+<COLOR=(0,176,80)><COLOR=(0,176,80)>set protocols bgp group OAM-CHR neighbor IPV6-address  authentication-key ?</COLOR></COLOR>
+set protocols bgp group OAM-CHR neighbor IPV6-address  description ""description-CHR-2 OAM""
+set protocols bgp group OAM-CHR neighbor IPV6-address  authentication-key ?
+
+set class-of-service scheduler-maps MBH_66_21_13 forwarding-class L-AF1 scheduler L-AF1 set class-of-service scheduler-maps MBH_66_21_13 forwarding-class L-AF2 scheduler L-AF2_21_HS set class-of-service scheduler-maps MBH_66_21_13 forwarding-class L-AF3 scheduler L-AF3_66_HS set class-of-service scheduler-maps MBH_66_21_13 forwarding-class L-BE scheduler L-BE set class-of-service scheduler-maps MBH_66_21_13 forwarding-class L-EF scheduler L-EF set class-of-service scheduler-maps MBH_66_21_13 forwarding-class RP scheduler RP set class-of-service scheduler-maps MBH_66_21_13 forwarding-class Signaling_voice scheduler Signaling_voice
+
+<COLOR=(0,176,80)>set interfaces</COLOR> ge|xe-0/x/x   unit <number> family inet filter input CMU_CSID_V1100|1500|1600-INGR
+
+*/ Apply red path, and apply import and export policy set protocols bgp group csr-global neighbor <RED-RE-IP-address>   import  Import-routes-bgpv4-<global red > set protocols bgp group csr-global neighbor <RED-RE-IP-address>  export   export-routes-bgpv4-<global  red > */ Apply blue path only if available, and apply import and export policy set protocols bgp group csr-global neighbor <BLUE-RE-IP-address>  import  Import-routes-bgp-<global blue > set protocols bgp group csr-global neighbor <BLUE-RE-IP-address>  export   export-routes-bgp-<global  blue >
+
+<COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)><COLOR=(0,176,80)>set routing-instances</COLOR></COLOR></COLOR></COLOR></COLOR> sc-inet instance-type virtual-router set routing-instances sc-inet description <description> set routing-instances sc-inet system services dhcp-local-server group local-sc-pool interface irb.40 set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet network <public_IP_subnet/prefix> */ of vlan 40
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet range range1 low <public_IP_address(low)>
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet range range1 high <public_IP_address(high)>
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet dhcp-attributes maximum-lease-time 259200 */ lease time 3 days set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet dhcp-attributes nameserver <x.x.x.x> */Inet DNS1
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet dhcp-attributes nameserver <x.x.x.x> */Inet DNS2
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet dhcp-attributes router <public_IP_address> */vlan 40 IP as default GW
+set routing-instances sc-inet access address-assignment pool sc-pool-1 family inet dhcp-attributes option 3 ip-address <public_IP_address> */vlan 40 IP as default GW
+set routing-instances sc-inet interface et-0/0/x.2xxx set routing-instances sc-inet interface et-0/0/x.3xxx set routing-instances sc-inet interface irb.40
+# For VR BGP configuration and import/export policy, please refer to section configure VR BGP."
