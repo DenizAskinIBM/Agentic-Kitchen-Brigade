@@ -270,7 +270,21 @@ for prov, (_csv, df) in CSV_MAPPING.items():
     # clustering for CSV stage
     df = df.copy()
     # Record all CSV columns to use as raw features (exclude target 'verified')
-    csv_feature_cols = [col for col in df.columns if col.lower() != "verified"]
+    # --- Stage 1: Define raw_features for CSV ---
+    raw_features = [
+        "user/totalTweets",
+        "user/totalFollowing",
+        "user/totalFollowers",
+        "timestamp",
+        "cluster_size",
+        "cluster_frequency",
+        "inter_arrival",
+        "count_1h",
+        "hour",
+        "weekday",
+        "count_1h_z"
+    ]
+    print("\n=== Test #1: Raw Features ===")
 
     # Synthetic positive-incident augmentation via compound Poisson simulation
     # Determine how many positives to generate to balance classes
@@ -348,75 +362,47 @@ for prov, (_csv, df) in CSV_MAPPING.items():
     df["bias"] = df["ratio_norm"].where(df["ratioIncidents"]>=1,0.0)
     df["cluster_size"] = df["cluster_size"] + df["bias"]
     y = df["verified"].astype(str).str.upper().eq("TRUE").astype(int)
-    X = df[feature_cols].copy()
+    # Stage 1: Raw features
+    X1 = df[raw_features].apply(pd.to_numeric, errors="coerce").fillna(0)
+    y1 = y
+    X1_tr, X1_te, y1_tr, y1_te = train_test_split(X1, y1, test_size=0.2, random_state=42, stratify=y1)
+    sm1 = SMOTE(random_state=42)
+    X1_tr_bal, y1_tr_bal = sm1.fit_resample(X1_tr, y1_tr)
+    clf1 = RandomForestClassifier(n_estimators=300, random_state=42, class_weight="balanced")
+    clf1.fit(X1_tr_bal, y1_tr_bal)
+    acc1 = clf1.score(X1_te, y1_te)
+    bal1 = balanced_accuracy_score(y1_te, clf1.predict(X1_te))
+    cm1 = confusion_matrix(y1_te, clf1.predict(X1_te))
+    print(f"Features used: {raw_features}")
+    # print("Confusion matrix (Test #1):")
+    # print(cm1)
+    print(f"Accuracy: {acc1:.3f}")
+    print(f"Balanced accuracy: {bal1:.3f}")
+    print("Report (weighted):")
+    print(classification_report(y1_te, clf1.predict(X1_te), digits=3, zero_division=0))
 
-    # --- Stage 1: Raw CSV Features Evaluation ---
-    # Use only a specific subset of CSV features for Stage 1
-    raw_features = [
-        "user/totalTweets",
-        "user/totalFollowers",
-        "user/totalFollowing",
-        "user/totalLikes",
-        "id",
-        "timestamp",
-        "likes",
-        "replies",
-        "retweets",
-        "quotes"
-    ]
-    print(f"Raw CSV features used ({len(raw_features)}): {raw_features}")
-    # Convert raw features to numeric, coercing errors and filling NaNs with 0
-    X_raw = df[raw_features].apply(pd.to_numeric, errors='coerce').fillna(0)
-    y_raw = y  # same target
-    # Split and apply SMOTE to raw features
-    Xr_train, Xr_te, yr_train, yr_te = train_test_split(X_raw, y_raw, test_size=0.2, random_state=42, stratify=y_raw)
-    sm_raw = SMOTE(random_state=42)
-    Xr_tr_bal, yr_tr_bal = sm_raw.fit_resample(Xr_train, yr_train)
-    # Train calibrated Random Forest on balanced raw features
-    base_raw = RandomForestClassifier(n_estimators=300, random_state=42, class_weight="balanced")
-    clf_raw = CalibratedClassifierCV(estimator=base_raw, cv=3)
-    clf_raw.fit(Xr_tr_bal, yr_tr_bal)
-    acc_raw = clf_raw.score(Xr_te, yr_te)
-    bal_raw = balanced_accuracy_score(yr_te, clf_raw.predict(Xr_te))
-    print("\n--- Stage 1: Raw CSV Features ---")
-    print(f"Raw features test accuracy : {acc_raw:.3f}")
-    print(f"Raw features balanced accuracy : {bal_raw:.3f}")
-    print(classification_report(yr_te, clf_raw.predict(Xr_te), digits=3, zero_division=0))
-    # Compute and print average predicted probability for the positive class
-    raw_probs = clf_raw.predict_proba(Xr_te)[:, 1]
-    print(f"Average predicted probability (positive class): {raw_probs.mean():.3f}")
+    # === Test #2: Engineered Features ===
+    print("\n=== Test #2: Engineered Features ===")
+    # Prepare X2, y2 for feature_cols
+    X2 = df[feature_cols].apply(pd.to_numeric, errors="coerce").fillna(0)
+    y2 = df["verified"].astype(str).str.upper().eq("TRUE").astype(int)
+    X2_tr, X2_te, y2_tr, y2_te = train_test_split(X2, y2, test_size=0.2, random_state=42, stratify=y2)
+    sm2 = SMOTE(random_state=42)
+    X2_tr_bal, y2_tr_bal = sm2.fit_resample(X2_tr, y2_tr)
+    clf2 = RandomForestClassifier(n_estimators=300, random_state=42, class_weight="balanced")
+    clf2.fit(X2_tr_bal, y2_tr_bal)
+    acc2 = clf2.score(X2_te, y2_te)
+    bal2 = balanced_accuracy_score(y2_te, clf2.predict(X2_te))
+    cm2 = confusion_matrix(y2_te, clf2.predict(X2_te))
+    print(f"Features used: {feature_cols}")
+    # print("Confusion matrix (Test #2):")
+    # print(cm2)
+    print(f"Accuracy: {acc2:.3f}")
+    print(f"Balanced accuracy: {bal2:.3f}")
+    print("Report (weighted):")
+    print(classification_report(y2_te, clf2.predict(X2_te), digits=3, zero_division=0))
 
-    # --- Stage 1: Raw CSV Feature Importances ---
-    print("\nTop 20 important raw CSV features:")
-    # Train a separate RF on the balanced raw data for importances
-    rf_imp_raw = RandomForestClassifier(n_estimators=300, random_state=42, class_weight="balanced")
-    rf_imp_raw.fit(Xr_tr_bal, yr_tr_bal)
-    importances_raw = rf_imp_raw.feature_importances_
-    feat_imp_raw = sorted(zip(raw_features, importances_raw), key=lambda x: x[1], reverse=True)[:20]
-    for feat, imp in feat_imp_raw:
-        print(f"  {feat}: {imp:.4f}")
-
-    # --- Stage 2: Existing pipeline (SMOTE/RFECV etc) ---
-    X_train_raw, X_te, y_train_raw, y_te = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
-    sm = SMOTE(random_state=42)
-    X_tr, y_tr = sm.fit_resample(X_train_raw, y_train_raw)
-    for name, pipe in pipelines.items():
-        print(f"\n----- Model: {name} -----")
-        pipe.fit(X_tr, y_tr)
-        if name == "RandomForest":
-            # Feature importances for engineered features
-            importances_eng = pipe.named_steps["clf"].feature_importances_
-            feat_imp_eng = sorted(zip(feature_cols, importances_eng), key=lambda x: x[1], reverse=True)[:20]
-            print("\nTop 20 important engineered features:")
-            for feat, imp in feat_imp_eng:
-                print(f"  {feat}: {imp:.4f}")
-        acc = pipe.score(X_te, y_te)
-        print(f"Test accuracy : {acc:.3f}")
-        bal = balanced_accuracy_score(y_te, pipe.predict(X_te))
-        print(f"Balanced accuracy : {bal:.3f}")
-        print("Report (weighted):")
-        print(classification_report(y_te, pipe.predict(X_te), digits=3, zero_division=0))
-    # XML predictions
+    # XML predictionsx
     print("\n--- XML‑based Predictions ---")
     df_xml = xml_to_rows(XML_FILES[prov], prov)
     if df_xml.empty:
@@ -432,14 +418,22 @@ for prov, (_csv, df) in CSV_MAPPING.items():
         size = group["cluster_size"].iloc[0]
         freq = group["cluster_frequency"].iloc[0]
         print(f"  Cluster {new_id}: size={size}, frequency={freq:.2f}")
-    rf = pipelines["RandomForest"]
-    preds = rf.predict(df_xml[feature_cols])
-    probs = rf.predict_proba(df_xml[feature_cols])[:,1]
+    # Prepare XML input for Test #1: ensure all raw_features are present
+    X_xml1 = pd.DataFrame({col: df_xml[col] if col in df_xml.columns else 0 for col in raw_features})
+    X_xml1 = X_xml1.apply(pd.to_numeric, errors='coerce').fillna(0)
+    preds1 = clf1.predict(X_xml1)
+    probs1 = clf1.predict_proba(X_xml1)[:,1]
     alpha = 0.5
+    combined1 = alpha * probs1 + (1-alpha) * df_xml["ratio_norm"].values
+    print("\nRaw classifier XML predictions:")
+    print(f"p={probs1.max():.2f}, score={combined1.max():.2f}")
+    # Use classifier from Test #2 (engineered features) for XML predictions
+    preds = clf2.predict(df_xml[feature_cols])
+    probs = clf2.predict_proba(df_xml[feature_cols])[:,1]
     combined = alpha*probs + (1-alpha)*df_xml["ratio_norm"].values
     maxc = combined.max()
     maxp = probs[combined.argmax()]
-    print(f"\n{prov}: {len(df_xml)} qualifying rows (p={maxp:.2f}, score={maxc:.2f})")
+    # print(f"\n{prov}: {len(df_xml)} qualifying rows (p={maxp:.2f}, score={maxc:.2f})")
     maxc = combined.max()
     best = [i+1 for i,v in enumerate(combined) if v==maxc]
     sample = df_xml.iloc[best[0]-1]

@@ -559,8 +559,8 @@ lab@SRBHONTFUC71> request system software add /var/tmp/junos-evo-install-acx-f-x
 set system services ssh sftp-server
 lab@SRBHONTFUC71> show system software list
 lab@SRBHONTFUC71> request system software ?
-delete               Remove extension or upgrade package
-rollback             Attempt to roll back to previous set of packages
+  delete               Remove extension or upgrade package
+  rollback             Attempt to roll back to previous set of packages
 lab@SRBHONTFUC71> show chassis pic fpc-slot 0 pic-slot 0
 show system storage      */check SSD space
 show dhcp server binding routing-instance <NAME>  */check dhcp client binding
