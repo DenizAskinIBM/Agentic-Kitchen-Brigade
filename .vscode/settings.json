@@ -1,5 +1,14 @@
 {
     "wcaForGP.enable": true,
+    "python.terminal.activateEnvironment": true,
+    "python.linting.enabled": false,
+    "python.analysis.typeCheckingMode": "off",
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportMissingImports": "none",
+        "reportUndefinedVariable": "none",
+        "reportUnboundVariable": "none",
+        "reportSyntaxError": "warning"
+    },
     "workbench.colorCustomizations": {
         "activityBar.background": "#173325",
         "titleBar.activeBackground": "#204834",

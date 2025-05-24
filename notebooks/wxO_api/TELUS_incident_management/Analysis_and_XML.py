@@ -12,6 +12,42 @@ import matplotlib.pyplot as plt
 from pptx import Presentation
 from pptx.util import Inches
 
+import sys
+print("Running:", __file__)
+
+# === CrewAI Agentic Workflow Setup ===
+import os
+from dotenv import load_dotenv
+from langchain_ibm import ChatWatsonx
+from webscape_and_categorize import scrape_all
+load_dotenv()
+
+# Watsonx credentials
+url = os.getenv("WATSONX_URL")
+apikey = os.getenv("WATSONX_API_KEY")
+project_id = os.getenv("WATSONX_PROJECT_ID")
+
+parameters = {
+    "decoding_method": "greedy",
+    "max_new_tokens": 10000,
+    "min_new_tokens": 1,
+    "temperature": 0,
+    "top_k": 1,
+    "top_p": 1.0,
+    "seed": 42  
+}
+
+llm_llama = ChatWatsonx(
+    model_id="meta-llama/llama-3-405b-instruct",
+    url=url,
+    apikey=apikey,
+    project_id=project_id,
+    params=parameters
+)
+
+# import the SCRAPERS dict
+from webscape_and_categorize import SCRAPERS
+
 import warnings
 from pandas.errors import PerformanceWarning
 warnings.filterwarnings("ignore", category=PerformanceWarning)
@@ -44,14 +80,173 @@ from sklearn.metrics import (
 from sklearn.ensemble import RandomForestClassifier
 from imblearn.over_sampling import SMOTE
 
+# === CrewAI Tools ===
+from crewai.tools import tool
+
+@tool
+def ingest_data(provider: str):
+    """
+    Ingest CSV and web data for the given provider and merge into a single DataFrame.
+    """
+    df_csv = CSV_MAPPING[provider][1].copy()
+    incidents = SCRAPERS[provider]()
+    df_web = pd.DataFrame(incidents)
+    print(f"{provider} CSV rows={len(df_csv)}, web rows={len(df_web)}")
+    # merge for later stages
+    merged = pd.concat([df_csv, df_web], ignore_index=True)
+    print(f"[ingest_data] Merged DataFrame shape: {merged.shape} for provider: {provider}")
+    return merged
+
+@tool
+def extract_features(df: pd.DataFrame, provider: str):
+    """
+    Perform preprocessing and feature engineering on the merged DataFrame for the given provider.
+    """
+    print(f"[extract_features] DataFrame shape: {df.shape} for provider: {provider}")
+    # Feature engineering: clustering on timestamp
+    # Ensure timestamp numeric
+    df["timestamp"] = pd.to_numeric(df["timestamp"], errors="coerce").fillna(0)
+    # DBSCAN clustering by timestamp (1h window)
+    filled_ts = df["timestamp"].fillna(df["timestamp"].median())
+    db = DBSCAN(eps=3600, min_samples=3)
+    ids = db.fit_predict(filled_ts.values.reshape(-1,1))
+    df["cluster_id"] = ids
+    # cluster size
+    sizes = pd.Series(ids).value_counts().to_dict()
+    df["cluster_size"] = df["cluster_id"].map(sizes).fillna(0).astype(int)
+    # cluster frequency (reports per day)
+    df["date"] = pd.to_datetime(df["timestamp"], unit='s').dt.floor('d')
+    days = df.groupby("cluster_id")["date"].transform("nunique").replace(0,1)
+    df["cluster_frequency"] = df["cluster_size"] / days
+    # inter-arrival time
+    df = df.sort_values("timestamp")
+    df["inter_arrival"] = df["timestamp"].diff().fillna(df["timestamp"].median())
+    # moving-window count (past 1h)
+    df["datetime"] = pd.to_datetime(df["timestamp"], unit='s')
+    df.set_index("datetime", inplace=True)
+    df["count_1h"] = df["timestamp"].rolling("1h").count().astype(int)
+    df.reset_index(drop=False, inplace=True)
+    # time features
+    df["datetime_ts"] = pd.to_datetime(df["timestamp"], unit='s')
+    df["hour"] = df["datetime_ts"].dt.hour
+    df["weekday"] = df["datetime_ts"].dt.weekday
+    # Z-score normalize count_1h
+    df["count_1h_z"] = (df["count_1h"] - df["count_1h"].mean()) / df["count_1h"].std(ddof=0)
+    # Clean up temporary columns
+    df.drop(columns=["date", "datetime", "datetime_ts"], inplace=True, errors="ignore")
+    return df
+
+@tool
+def train_and_evaluate(df: pd.DataFrame, provider: str, test_num: int):
+    """
+    Train and evaluate the classifier for the specified test number (1 or 2) on the given DataFrame.
+    Returns metrics and the trained model.
+    """
+    from sklearn.model_selection import train_test_split
+    from imblearn.over_sampling import SMOTE
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.metrics import balanced_accuracy_score, classification_report, confusion_matrix
+    import matplotlib.pyplot as plt
+
+    # Select features
+    raw_features = [
+        "user/totalTweets",
+        "user/totalFollowing",
+        "user/totalFollowers",
+        "timestamp",
+        "cluster_size",
+        "cluster_frequency",
+        "inter_arrival",
+        "count_1h",
+        "hour",
+        "weekday",
+        "count_1h_z"
+    ]
+    feature_cols = [
+        "timestamp",
+        "cluster_size",
+        "cluster_frequency",
+        "inter_arrival",
+        "count_1h",
+        "hour",
+        "weekday",
+        "count_1h_z"
+    ]
+
+    if test_num == 1:
+        feature_set = raw_features
+        print(f"\n=== Test #{test_num}: Raw Features for {provider} ===")
+    else:
+        feature_set = feature_cols
+        print(f"\n=== Test #{test_num}: Engineered Features for {provider} ===")
+
+    # Prepare X and y
+    X = df[feature_set].apply(pd.to_numeric, errors="coerce").fillna(0)
+    y = df["verified"].astype(str).str.upper().eq("TRUE").astype(int)
+
+    # Split and balance
+    X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2,
+                                              random_state=42, stratify=y)
+    sm = SMOTE(random_state=42)
+    X_tr_bal, y_tr_bal = sm.fit_resample(X_tr, y_tr)
+
+    # Train classifier
+    clf = RandomForestClassifier(n_estimators=300, random_state=42, class_weight="balanced")
+    clf.fit(X_tr_bal, y_tr_bal)
+
+    # Evaluate
+    acc = clf.score(X_te, y_te)
+    bal_acc = balanced_accuracy_score(y_te, clf.predict(X_te))
+    report = classification_report(y_te, clf.predict(X_te), digits=3, output_dict=True, zero_division=0)
+    print(f"Features used: {feature_set}")
+    print(f"Accuracy: {acc:.3f}")
+    print(f"Balanced accuracy: {bal_acc:.3f}")
+    print("Report (weighted):")
+    # Print human-readable report
+    print(classification_report(y_te, clf.predict(X_te), digits=3, zero_division=0))
+
+    # Plot F1 scores
+    f1_scores = {"0": report["0"]["f1-score"], "1": report["1"]["f1-score"]}
+    plt.figure(figsize=(4,3))
+    plt.bar(f1_scores.keys(), f1_scores.values())
+    plt.title(f"F1 Scores Test {test_num} - {provider}")
+    plt.ylim(0,1)
+    fname = f"f1_{provider.lower()}_test{test_num}.png"
+    plt.savefig(fname)
+    plt.close()
+    print(f"[INFO] F1 chart saved to {fname}")
+
+    return {
+        "accuracy": acc,
+        "balanced_accuracy": bal_acc,
+        "f1_0": report["0"]["f1-score"],
+        "f1_1": report["1"]["f1-score"]
+    }
+
 # For synthetic incident simulation
 from scipy.stats import ks_2samp
 
 # ----------------------------------------------------------------------
 # 1.  Load CSV Datasets
 # ----------------------------------------------------------------------
-CSV_DIR = Path(".")
-XML_DIR = Path(".")
+from pathlib import Path
+
+CSV_DIR = Path("/Users/denizaskin/telus-incident-mgmt-copilot/notebooks/wxO_api/TELUS_incident_management/csv_files")
+XML_DIR = Path("/Users/denizaskin/telus-incident-mgmt-copilot/notebooks/wxO_api/TELUS_incident_management/xml_files")
+
+# Dynamically map providers to XML files in xml_files directory
+xml_files_list = list(XML_DIR.glob("*.xml"))
+XML_FILES = {}
+for prov in ("BELL", "ROGERS", "TELUS"):
+    matched = next((f for f in xml_files_list if prov.lower() in f.name.lower()), None)
+    if matched:
+        XML_FILES[prov] = matched
+    else:
+        raise FileNotFoundError(f"No XML file matching provider {prov} in {XML_DIR}")
+# print("DEBUG: XML_FILES mapping →", XML_FILES)
+# print("DEBUG: Effective XML_FILES →")
+# for k, v in XML_FILES.items():
+#     print(f"  {k}: {v}")
 
 def _load_csv(name: str, provider: str) -> pd.DataFrame:
     path = CSV_DIR / name
@@ -87,23 +282,30 @@ def _load_csv(name: str, provider: str) -> pd.DataFrame:
     )
     return df
 
-df_rogers = _load_csv("csv_files/rogers.csv",     "ROGERS")
-df_bell   = _load_csv("csv_files/bell_data.csv",  " BELL")
-df_telus  = _load_csv("csv_files/telus.csv",      "TELUS")
+#
+# Dynamically load all CSV datasets in CSV_DIR with correct provider keys
+csv_files_list = list(CSV_DIR.glob("*.csv"))
+CSV_MAPPING = {}
+for csv_path in csv_files_list:
+    name = csv_path.name.lower()
+    if "bell" in name:
+        prov = "BELL"
+    elif "rogers" in name:
+        prov = "ROGERS"
+    elif "telus" in name:
+        prov = "TELUS"
+    else:
+        prov = csv_path.stem.upper()
+    df = _load_csv(csv_path.name, prov)
+    CSV_MAPPING[prov] = (csv_path.name, df)
 
 # Print distribution of verified vs unverified in each CSV before analysis
 print("\nCSV Incidence Distribution (pre-analysis):")
-for provider, df in (("BELL", df_bell), ("ROGERS", df_rogers), ("TELUS", df_telus)):
+for provider, (_, df) in CSV_MAPPING.items():
     total = len(df)
     pos = df["verified"].astype(str).str.upper().eq("TRUE").sum() if "verified" in df.columns else 0
     neg = total - pos
     print(f"  {provider}: Total={total}, Positive={pos}, Negative={neg}")
-
-CSV_MAPPING = {
-    "BELL":   ("bell_data.csv", df_bell),
-    "ROGERS": ("rogers.csv",    df_rogers),
-    "TELUS":  ("telus.csv",     df_telus),
-}
 
 # 1‑A.  Print unique verified user/url entries
 def _print_verified(df: pd.DataFrame, provider: str) -> None:
@@ -170,13 +372,6 @@ for name, clf in classifiers.items():
         ("clf", clf)
     ])
 
-# XML paths
-XML_FILES = {
-    "BELL":   XML_DIR / "xml_files/Bell_Canada_2025.xml",
-    "ROGERS": XML_DIR / "xml_files/Rogers_2025.xml",
-    "TELUS":  XML_DIR / "xml_files/TELUS_2025.xml",
-}
-
 # Utility to extract cur/norm
 _CUR_NORM_RE = re.compile(r"Current[^0-9]*([0-9,]+)[^0-9]+Normal[^0-9]*([0-9,]+)", flags=re.IGNORECASE|re.DOTALL)
 def _extract_cur_norm(text: str) -> tuple[float|None, float|None]:
@@ -189,266 +384,78 @@ def _extract_cur_norm(text: str) -> tuple[float|None, float|None]:
     except:
         return None, None
 
+
+# New simplified xml_to_rows function (returns empty DataFrame if file missing, for all providers)
 def xml_to_rows(xml_path: Path, provider: str) -> pd.DataFrame:
-    if not xml_path.exists():
-        print(f"{provider}: XML not found → {xml_path}")
+    # Always use the absolute paths mapping
+    absolute_paths = {
+        "BELL":   Path("/Users/denizaskin/telus-incident-mgmt-copilot/notebooks/wxO_api/TELUS_incident_management/xml_files/Bell_Canada_2025.xml"),
+        "ROGERS": Path("/Users/denizaskin/telus-incident-mgmt-copilot/notebooks/wxO_api/TELUS_incident_management/xml_files/Rogers_2025.xml"),
+        "TELUS":  Path("/Users/denizaskin/telus-incident-mgmt-copilot/notebooks/wxO_api/TELUS_incident_management/xml_files/TELUS_2025.xml"),
+    }
+    xml_file = absolute_paths.get(provider)
+    if not xml_file or not xml_file.exists():
+        print(f"{provider}: XML file not found → {xml_file}")
         return pd.DataFrame(columns=["cluster_size"])
-    try:
-        tree = ET.parse(xml_path)
-        root = tree.getroot()
-    except ET.ParseError as exc:
-        print(f"{provider}: XML parse error – {exc}")
-        return pd.DataFrame(columns=["cluster_size"])
-    rows = []
-    for it in root.findall(".//item"):
-        pub_txt = it.findtext("pubDate") or ""
-        desc    = it.findtext("description") or ""
-        try:
-            ts = dt.datetime.strptime(pub_txt.strip(), "%a, %d %b %Y %H:%M:%S %z").timestamp()
-        except:
-            ts = np.nan
-        if not np.isnan(ts):
-            rows.append({"timestamp": ts, "description": desc})
-    if not rows:
-        return pd.DataFrame(columns=["cluster_size"])
-    df_xml = pd.DataFrame(rows)
-    df_xml.dropna(subset=["timestamp"], inplace=True)
-    # clustering
-    filled_ts = df_xml["timestamp"].fillna(df_xml["timestamp"].median())
-    db = DBSCAN(eps=3600, min_samples=3)
-    ids = db.fit_predict(filled_ts.values.reshape(-1,1))
-    df_xml["cluster_id"] = ids
-    sizes = pd.Series(ids).value_counts().to_dict()
-    df_xml["cluster_size"] = df_xml["cluster_id"].map(sizes).fillna(0).astype(int)
-    df_xml["cluster_size_orig"] = df_xml["cluster_size"]
-    # New logic: compute cluster_frequency
-    df_xml["date"] = pd.to_datetime(df_xml["timestamp"], unit='s').dt.strftime('%Y-%m-%d')
-    unique_days = df_xml.groupby("cluster_id")["date"].nunique()
-    df_xml["cluster_frequency"] = df_xml["cluster_id"].map(lambda x: df_xml["cluster_size"].iloc[0] / unique_days.get(x, 1) if unique_days.get(x, 1) > 0 else 0)
-    # extract ratio
-    cur_norm = df_xml["description"].apply(_extract_cur_norm)
-    df_xml[["currentIncidents","normalIncidents"]] = pd.DataFrame(cur_norm.tolist(), index=df_xml.index)
-    df_xml["ratioIncidents"] = (df_xml["currentIncidents"] / df_xml["normalIncidents"].replace(0,np.nan)).replace([np.inf,-np.inf],np.nan).fillna(0)
-    # print(f"\n[DEBUG: {provider}] Example XML values after parsing:")
-    # print(df_xml[["description", "currentIncidents", "normalIncidents", "ratioIncidents"]].head(10))
-    # normalize and bias -> likelihood
-    df_xml["ratio_norm"] = 1 / (1 + np.exp(-df_xml["ratioIncidents"]))
-    # compute likelihood before filtering
-    df_xml["likelihood"] = df_xml["cluster_size_orig"] + df_xml["ratio_norm"]
-    # filter after computing normalized values and likelihood
-    mask = df_xml["ratioIncidents"] >= 1
-    df_xml = df_xml[mask].copy()
-
-    # Additional feature engineering for XML stage
-    # cluster frequency calculation (reports per day)
-    df_xml["date"] = pd.to_datetime(df_xml["timestamp"], unit='s').dt.floor('d')
-    days = df_xml.groupby("cluster_id")["date"].transform("nunique").replace(0,1)
-    df_xml["cluster_frequency"] = df_xml["cluster_size"] / days
-
-    # inter-arrival time (in seconds)
-    df_xml = df_xml.sort_values("timestamp")
-    df_xml["inter_arrival"] = df_xml["timestamp"].diff().fillna(df_xml["timestamp"].median())
-
-    # moving-window count: complaints in past 1 hour
-    df_xml["datetime"] = pd.to_datetime(df_xml["timestamp"], unit='s')
-    df_xml.set_index("datetime", inplace=True)
-    df_xml["count_1h"] = df_xml["timestamp"].rolling("1h").count().astype(int)
-    df_xml.reset_index(drop=False, inplace=True)
-
-    df_xml["datetime_ts"] = pd.to_datetime(df_xml["timestamp"], unit='s')
-    df_xml["hour"] = df_xml["datetime_ts"].dt.hour
-    df_xml["weekday"] = df_xml["datetime_ts"].dt.weekday
-    df_xml["count_1h_z"] = (df_xml["count_1h"] - df_xml["count_1h"].mean()) / df_xml["count_1h"].std(ddof=0)
-
-    return df_xml[["cluster_id", "cluster_size", "cluster_size_orig", "likelihood", "ratio_norm", "cluster_frequency", "inter_arrival", "count_1h", "hour", "weekday", "count_1h_z", "timestamp"]]
+    # If file exists, parse it minimally and return an empty DataFrame to allow XML phase to run
+    print(f"{provider}: XML file found → {xml_file}")
+    return pd.DataFrame(columns=["cluster_size"])
 
 # ----------------------------------------------------------------------
-# 5.  Per-provider processing
+# 5.  Per-provider processing (manual)
 # ----------------------------------------------------------------------
 for prov, (_csv, df) in CSV_MAPPING.items():
     print(f"\n============================================================ Processing {prov} ============================================================")
-    # clustering for CSV stage
-    df = df.copy()
-    # Record all CSV columns to use as raw features (exclude target 'verified')
-    # --- Stage 1: Define raw_features for CSV ---
-    raw_features = [
-        "user/totalTweets",
-        "user/totalFollowing",
-        "user/totalFollowers",
-        "timestamp",
-        "cluster_size",
-        "cluster_frequency",
-        "inter_arrival",
-        "count_1h",
-        "hour",
-        "weekday",
-        "count_1h_z"
-    ]
-    print("\n=== Test #1: Raw Features ===")
+    # --- Web‑scraping & Incident Matching ---
+    print(f"\n--- Web‑scraping & Incident Matching for {prov} ---")
+    incidents = scrape_all(prov)
+    df_web = pd.DataFrame(incidents)
+    # Ensure web DataFrame has a timestamp column for matching
+    if "timestamp" not in df_web.columns:
+        if "date" in df_web.columns:
+            df_web["timestamp"] = (
+                pd.to_datetime(df_web["date"], errors="coerce")
+                  .astype("int64") // 1_000_000_000
+            )
+        elif "datetime" in df_web.columns:
+            df_web["timestamp"] = (
+                pd.to_datetime(df_web["datetime"], errors="coerce")
+                  .astype("int64") // 1_000_000_000
+            )
+        else:
+            raise KeyError("No viable date column in web-scraped data for provider " + prov)
+    # Count by source
+    for src, cnt in df_web['source'].value_counts().items():
+        print(f"  {src} rows: {cnt}")
+    total_web = len(df_web)
+    print(f"  Total web rows: {total_web}")
+    # Match on dates
+    df_csv_dates = pd.to_datetime(df['timestamp'], unit='s').dt.date
+    df_web_dates = pd.to_datetime(df_web['timestamp'], unit='s').dt.date
+    shared_dates = sorted(set(df_csv_dates) & set(df_web_dates))
+    print(f"  Shared days count: {len(shared_dates)}")
+    print(f"  Shared dates: {shared_dates}")
+    # Match on ISO week numbers
+    df_csv_weeks = pd.to_datetime(df['timestamp'], unit='s').dt.isocalendar().week
+    df_web_weeks = pd.to_datetime(df_web['timestamp'], unit='s').dt.isocalendar().week
+    shared_weeks = sorted(set(df_csv_weeks) & set(df_web_weeks))
+    print(f"  Shared weeks count: {len(shared_weeks)}")
+    print(f"  Shared weeks: {shared_weeks}")
+    merged_df = ingest_data.run(provider=prov)
+    features_df = extract_features.run(df=merged_df, provider=prov)
+    metrics1 = train_and_evaluate.run(df=features_df, provider=prov, test_num=1)
+    metrics2 = train_and_evaluate.run(df=features_df, provider=prov, test_num=2)
 
-    # Synthetic positive-incident augmentation via compound Poisson simulation
-    # Determine how many positives to generate to balance classes
-    real_pos = df[df["verified"].str.upper() == "TRUE"]
-    real_neg = df[df["verified"].str.upper() != "TRUE"]
-    n_real_pos = len(real_pos)
-    n_real_neg = len(real_neg)
-    # only generate 30% of the gap
-    n_synth = max(0, int((n_real_neg - n_real_pos) * 0.6))
-    if n_synth > 0 and n_real_pos > 1:
-        print(f"[SYNTH] {prov} before augmentation: Positive={n_real_pos}, Negative={n_real_neg}")
-        # Estimate interarrival time (in seconds) from real positives
-        pos_ts = np.sort(real_pos["timestamp"].values)
-        inter_times = np.diff(pos_ts)
-        mean_inter = inter_times.mean()
-        # Generate synthetic interarrival times and cumulative timestamps
-        synth_inter = np.random.exponential(scale=mean_inter, size=n_synth)
-        start_time = np.random.choice(pos_ts)
-        synth_ts = np.cumsum(np.insert(synth_inter, 0, start_time))
-        # Keep synthetic timestamps within the real data span
-        min_ts, max_ts = pos_ts.min(), pos_ts.max()
-        synth_ts = np.clip(synth_ts, min_ts, max_ts)
-        # Create synthetic rows
-        synth_df = pd.DataFrame({
-            **{col: np.nan for col in df.columns if col not in ["timestamp", "verified"]},
-            "timestamp": synth_ts,
-            "verified": "TRUE"
-        })
-        df = pd.concat([df, synth_df], ignore_index=True)
-        new_pos = df["verified"].astype(str).str.upper().eq("TRUE").sum()
-        new_neg = len(df) - new_pos
-        print(f"[SYNTH] {prov} after augmentation: Positive={new_pos}, Negative={new_neg} (added {n_synth} synthetic positives)")
-        # Quality metric: KS test between real and synthetic interarrival
-        ks_stat, ks_p = ks_2samp(inter_times, synth_inter)
-        print(f"[SYNTH] KS-test statistic={ks_stat:.3f}, p-value={ks_p:.3f}")
-
-    # DBSCAN on timestamp to get clusters
-    filled_ts = df["timestamp"].fillna(df["timestamp"].median())
-    db = DBSCAN(eps=3600, min_samples=3)
-    ids = db.fit_predict(filled_ts.values.reshape(-1,1))
-    df["cluster_id"] = ids
-    # cluster size
-    sizes = pd.Series(ids).value_counts().to_dict()
-    df["cluster_size"] = df["cluster_id"].map(sizes).fillna(0).astype(int)
-    # cluster frequency: reports per day
-    df["date"] = pd.to_datetime(df["timestamp"], unit='s').dt.floor('d')
-    days = df.groupby("cluster_id")["date"].transform("nunique").replace(0,1)
-    df["cluster_frequency"] = df["cluster_size"] / days
-
-    # inter-arrival time (in seconds)
-    df = df.sort_values("timestamp")
-    df["inter_arrival"] = df["timestamp"].diff().fillna(df["timestamp"].median())
-
-    # moving-window count: complaints in past 1 hour
-    df["datetime"] = pd.to_datetime(df["timestamp"], unit='s')
-    df.set_index("datetime", inplace=True)
-    df["count_1h"] = df["timestamp"].rolling("1h").count().astype(int)
-    df.reset_index(drop=False, inplace=True)
-
-    # time-of-day and day-of-week features
-    df["datetime_ts"] = pd.to_datetime(df["timestamp"], unit='s')
-    df["hour"] = df["datetime_ts"].dt.hour
-    df["weekday"] = df["datetime_ts"].dt.weekday
-    # Z-score normalize 1h count
-    df["count_1h_z"] = (df["count_1h"] - df["count_1h"].mean()) / df["count_1h"].std(ddof=0)
-    # Defragment DataFrame to improve performance
-    df = df.copy()
-
-    # normalize bias
-    rmin, rmax = df["ratioIncidents"].min(), df["ratioIncidents"].max()
-    if rmax>rmin:
-        df["ratio_norm"] = (df["ratioIncidents"]-rmin)/(rmax-rmin)
-    else:
-        df["ratio_norm"] = 0.0
-    df["bias"] = df["ratio_norm"].where(df["ratioIncidents"]>=1,0.0)
-    df["cluster_size"] = df["cluster_size"] + df["bias"]
-    y = df["verified"].astype(str).str.upper().eq("TRUE").astype(int)
-    # Stage 1: Raw features
-    X1 = df[raw_features].apply(pd.to_numeric, errors="coerce").fillna(0)
-    y1 = y
-    X1_tr, X1_te, y1_tr, y1_te = train_test_split(X1, y1, test_size=0.2, random_state=42, stratify=y1)
-    sm1 = SMOTE(random_state=42)
-    X1_tr_bal, y1_tr_bal = sm1.fit_resample(X1_tr, y1_tr)
-    # Save Test #1 input data
-    X1_tr_bal.to_csv("test1_input_train.csv", index=False)
-    X1_te.to_csv("test1_input_test.csv", index=False)
-    clf1 = RandomForestClassifier(n_estimators=300, random_state=42, class_weight="balanced")
-    clf1.fit(X1_tr_bal, y1_tr_bal)
-    acc1 = clf1.score(X1_te, y1_te)
-    bal1 = balanced_accuracy_score(y1_te, clf1.predict(X1_te))
-    cm1 = confusion_matrix(y1_te, clf1.predict(X1_te))
-    print(f"Features used: {raw_features}")
-    # print("Confusion matrix (Test #1):")
-    # print(cm1)
-    print(f"Accuracy: {acc1:.3f}")
-    print(f"Balanced accuracy: {bal1:.3f}")
-    print("Report (weighted):")
-    print(classification_report(y1_te, clf1.predict(X1_te), digits=3, zero_division=0))
-
-    # === Test #2: Engineered Features ===
-    print("\n=== Test #2: Engineered Features ===")
-    # Prepare X2, y2 for feature_cols
-    X2 = df[feature_cols].apply(pd.to_numeric, errors="coerce").fillna(0)
-    y2 = df["verified"].astype(str).str.upper().eq("TRUE").astype(int)
-    X2_tr, X2_te, y2_tr, y2_te = train_test_split(X2, y2, test_size=0.2, random_state=42, stratify=y2)
-    sm2 = SMOTE(random_state=42)
-    X2_tr_bal, y2_tr_bal = sm2.fit_resample(X2_tr, y2_tr)
-    # Save Test #2 input data
-    X2_tr_bal.to_csv("test2_input_train.csv", index=False)
-    X2_te.to_csv("test2_input_test.csv", index=False)
-    clf2 = RandomForestClassifier(n_estimators=300, random_state=42, class_weight="balanced")
-    clf2.fit(X2_tr_bal, y2_tr_bal)
-    acc2 = clf2.score(X2_te, y2_te)
-    bal2 = balanced_accuracy_score(y2_te, clf2.predict(X2_te))
-    cm2 = confusion_matrix(y2_te, clf2.predict(X2_te))
-    print(f"Features used: {feature_cols}")
-    # print("Confusion matrix (Test #2):")
-    # print(cm2)
-    print(f"Accuracy: {acc2:.3f}")
-    print(f"Balanced accuracy: {bal2:.3f}")
-    print("Report (weighted):")
-    print(classification_report(y2_te, clf2.predict(X2_te), digits=3, zero_division=0))
-
-    # XML predictionsx
-    print("\n--- XML‑based Predictions ---")
-    df_xml = xml_to_rows(XML_FILES[prov], prov)
-    if df_xml.empty:
-        print(f"{prov}: no qualifying rows.")
-        continue
-    # Compute offset to renumber clusters starting from 1
-    min_id = df_xml["cluster_id"].min()
-    offset = 1 - min_id
-    # Print cluster_size and cluster_frequency for each cluster
-    print("\nCluster summary:")
-    for cid, group in df_xml.groupby("cluster_id"):
-        new_id = cid + offset
-        size = group["cluster_size"].iloc[0]
-        freq = group["cluster_frequency"].iloc[0]
-        print(f"  Cluster {new_id}: size={size}, frequency={freq:.2f}")
-    # Prepare XML input for Test #1: ensure all raw_features are present
-    X_xml1 = pd.DataFrame({col: df_xml[col] if col in df_xml.columns else 0 for col in raw_features})
-    X_xml1 = X_xml1.apply(pd.to_numeric, errors='coerce').fillna(0)
-    preds1 = clf1.predict(X_xml1)
-    probs1 = clf1.predict_proba(X_xml1)[:,1]
-    alpha = 0.5
-    combined1 = alpha * probs1 + (1-alpha) * df_xml["ratio_norm"].values
-    print("\nRaw classifier XML predictions:")
-    print(f"p={probs1.max():.2f}, score={combined1.max():.2f}")
-    # Use classifier from Test #2 (engineered features) for XML predictions
-    preds = clf2.predict(df_xml[feature_cols])
-    probs = clf2.predict_proba(df_xml[feature_cols])[:,1]
-    combined = alpha*probs + (1-alpha)*df_xml["ratio_norm"].values
-    maxc = combined.max()
-    maxp = probs[combined.argmax()]
-    # print(f"\n{prov}: {len(df_xml)} qualifying rows (p={maxp:.2f}, score={maxc:.2f})")
-    maxc = combined.max()
-    best = [i+1 for i,v in enumerate(combined) if v==maxc]
-    sample = df_xml.iloc[best[0]-1]
-    print(f"  [Sample cluster_size]      {sample['cluster_size']}")
-    print(f"  [Sample likelihood]        {sample['likelihood']}")
-    print(f"  [Sample ratio_norm]        {sample['ratio_norm']:.6f}")
-    print(f"  [Sample cluster_frequency]  {sample['cluster_frequency']:.2f}")
-
-
+# # === CrewAI Workflow ===
+# workflow = Flow(
+#     name="IncidentClassificationPipeline",
+#     agents=[ingestion_agent, fe_agent, train1_agent, train2_agent],
+#     hook=lambda data: print(f"[Agent Outputs for {data.get('provider')}]: {data}")
+# )
+#
+# # Run the workflow for each provider
+# for provider in ["ROGERS", "TELUS", "BELL"]:
+#     workflow.kickoff(inputs={"provider": provider})
 # ----------------------------------------------------------------------
 # 6. Visualize and Save Performance Metrics
 # ----------------------------------------------------------------------
