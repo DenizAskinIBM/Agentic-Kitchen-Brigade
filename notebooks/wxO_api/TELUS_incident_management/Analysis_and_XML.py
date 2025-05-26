@@ -4,13 +4,12 @@
 # 0. Imports
 # ----------------------------------------------------------------------
 from __future__ import annotations
-import xml.etree.ElementTree as ET
+from typing import ClassVar
 from pathlib import Path
 import re
 import datetime as dt
 import matplotlib.pyplot as plt
-from pptx import Presentation
-from pptx.util import Inches
+from graphviz import Source
 
 import sys
 print("Running:", __file__)
@@ -54,6 +53,8 @@ warnings.filterwarnings("ignore", category=PerformanceWarning)
 
 import numpy as np
 import pandas as pd
+ # store matched incidents for LLM reporting
+MATCHED_STORE: dict[str, tuple[pd.DataFrame, pd.DataFrame]] = {}
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.calibration import CalibratedClassifierCV
@@ -69,6 +70,8 @@ from sklearn.preprocessing import (
     StandardScaler,
 )
 from sklearn.cluster import DBSCAN
+from sklearn.neighbors import NearestNeighbors
+from kneed import KneeLocator
 
 # evaluation utilities
 from sklearn.metrics import (
@@ -80,35 +83,122 @@ from sklearn.metrics import (
 from sklearn.ensemble import RandomForestClassifier
 from imblearn.over_sampling import SMOTE
 
+# === CrewAI Agent/Flow Imports ===
+from crewai import Agent
+from crewai.flow.flow import Flow
+
 # === CrewAI Tools ===
 from crewai.tools import tool
 
 @tool
 def ingest_data(provider: str):
     """
-    Ingest CSV and web data for the given provider and merge into a single DataFrame.
+    Ingest CSV and web data for the given provider and compute matched incidents only.
     """
     df_csv = CSV_MAPPING[provider][1].copy()
     incidents = SCRAPERS[provider]()
     df_web = pd.DataFrame(incidents)
-    print(f"{provider} CSV rows={len(df_csv)}, web rows={len(df_web)}")
-    # merge for later stages
-    merged = pd.concat([df_csv, df_web], ignore_index=True)
-    print(f"[ingest_data] Merged DataFrame shape: {merged.shape} for provider: {provider}")
-    return merged
+    # --- ensure web DataFrame has a timestamp column ---
+    if "timestamp" not in df_web.columns:
+        if "date" in df_web.columns:
+            df_web["timestamp"] = (
+                pd.to_datetime(df_web["date"], errors="coerce")
+                  .astype("int64") // 1_000_000_000
+            )
+        elif "datetime" in df_web.columns:
+            df_web["timestamp"] = (
+                pd.to_datetime(df_web["datetime"], errors="coerce")
+                  .astype("int64") // 1_000_000_000
+            )
+        else:
+            raise KeyError(f"No viable date column in web-scraped data for provider {provider}")
+    # --- keyword matching via TF-IDF ---
+    keywords = ["outage", "down", "maintenance"]
+    # ensure description column exists
+    descs = df_web.get("description", pd.Series([""] * len(df_web))).fillna("")
+    tfidf_vec = TfidfVectorizer(
+        vocabulary=keywords,
+        lowercase=True,
+        token_pattern=r"(?u)\b\w+\b"
+    )
+    X_kw = tfidf_vec.fit_transform(descs)
+    # add TF-IDF feature columns per keyword
+    for idx, kw in enumerate(keywords):
+        df_web[f"kw_{kw}_tfidf"] = X_kw[:, idx].toarray().ravel()
+    # log rows containing any keyword
+    any_kw = (X_kw.sum(axis=1) > 0).A1.sum()
+    # --- filter web rows by new dates/weeks relative to CSV ---
+    # extract dates and ISO weeks from CSV
+    csv_dates = set(pd.to_datetime(df_csv["timestamp"], unit="s").dt.date)
+    csv_weeks = set(
+        pd.to_datetime(df_csv["timestamp"], unit="s")
+         .dt.isocalendar()
+         .week
+    )
+    # extract dates and ISO weeks from web-scraped data
+    df_web["date"] = pd.to_datetime(df_web["timestamp"], unit="s").dt.date
+    df_web["week"] = pd.to_datetime(df_web["timestamp"], unit="s").dt.isocalendar().week
+
+    # Restrict web scraping to only CSV test-set dates
+    df_web = df_web[df_web["date"].isin(csv_dates)]
+
+    # After filtering, all rows are matched by day
+    matched_by_day = df_web
+    # Only store matched incidents for LLM reporting; do not merge or print.
+    csv_dates_series = pd.to_datetime(df_csv["timestamp"], unit="s", errors="coerce").dt.date
+    csv_matched = df_csv[csv_dates_series.isin(csv_dates)]
+    MATCHED_STORE[provider] = (matched_by_day.copy(), csv_matched.copy())
+    return df_csv
 
 @tool
 def extract_features(df: pd.DataFrame, provider: str):
     """
     Perform preprocessing and feature engineering on the merged DataFrame for the given provider.
     """
-    print(f"[extract_features] DataFrame shape: {df.shape} for provider: {provider}")
+    # LLM-assisted hyperparameter selection for clustering window with rich context
+    # Compute time-based statistics
+    times = pd.to_datetime(df["timestamp"], unit="s", errors="coerce").sort_values()
+    span_hours = ((times.iloc[-1] - times.iloc[0]).total_seconds() / 3600) if len(times) > 1 else 0
+    inter = times.diff().dropna().dt.total_seconds()
+    median_gap = inter.median() if not inter.empty else 0
+    p90_gap = inter.quantile(0.90) if not inter.empty else 0
+    distinct_days = df["timestamp"].fillna(0).pipe(
+        lambda s: pd.to_datetime(s, unit="s", errors="coerce").dt.date.nunique()
+    )
+    var_gap = inter.var() if not inter.empty else 0
+    prompt = (
+        f"I have {len(df)} incidents over a {span_hours:.1f}-hour period "
+        f"spanning {distinct_days} distinct days. The median time between incidents is "
+        f"{median_gap:.1f}s with a 90th-percentile gap of {p90_gap:.1f}s, and a variance "
+        f"of {var_gap:.1f}. Based on this, what DBSCAN eps (in seconds) would cluster together "
+        "incidents that represent the same outage event?"
+    )
+    resp = llm_llama.invoke(prompt).content
+    try:
+        eps = int(resp.strip().split()[0])
+    except:
+        eps = 3600
+    # print(f"[extract_features] DataFrame shape: {df.shape} for provider: {provider}")
     # Feature engineering: clustering on timestamp
     # Ensure timestamp numeric
     df["timestamp"] = pd.to_numeric(df["timestamp"], errors="coerce").fillna(0)
     # DBSCAN clustering by timestamp (1h window)
     filled_ts = df["timestamp"].fillna(df["timestamp"].median())
-    db = DBSCAN(eps=3600, min_samples=3)
+    # --- k-distance plot to calibrate eps ---
+    # Compute k-distance (k = min_samples before clustering)
+    k = 5
+    nbrs = NearestNeighbors(n_neighbors=k).fit(filled_ts.values.reshape(-1,1))
+    distances, _ = nbrs.kneighbors(filled_ts.values.reshape(-1,1))
+    k_dist = np.sort(distances[:, -1])
+    # Save the k-distance plot for manual inspection
+    plt.figure(); plt.plot(k_dist); plt.title(f"k-distance for {provider}"); plt.savefig(f"k_distance_{provider}.png"); plt.close()
+    # Automatic knee detection
+    knee = KneeLocator(range(len(k_dist)), k_dist, curve="convex", direction="increasing")
+    if knee.knee is not None:
+        eps = k_dist[knee.knee]
+    else:
+        eps = eps  # fallback to LLM or default
+    db = DBSCAN(eps=eps, min_samples=5)
     ids = db.fit_predict(filled_ts.values.reshape(-1,1))
     df["cluster_id"] = ids
     # cluster size
@@ -147,6 +237,7 @@ def train_and_evaluate(df: pd.DataFrame, provider: str, test_num: int):
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.metrics import balanced_accuracy_score, classification_report, confusion_matrix
     import matplotlib.pyplot as plt
+    from collections import Counter
 
     # Select features
     raw_features = [
@@ -187,8 +278,14 @@ def train_and_evaluate(df: pd.DataFrame, provider: str, test_num: int):
     # Split and balance
     X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2,
                                               random_state=42, stratify=y)
+    # Print cluster_size distribution in test set
+    from collections import Counter
+    cluster_dist = Counter(X_te["cluster_size"])
+    print("Test set cluster_size distribution:", cluster_dist)
     sm = SMOTE(random_state=42)
+    print("Before SMOTE:", Counter(y_tr))
     X_tr_bal, y_tr_bal = sm.fit_resample(X_tr, y_tr)
+    print("After SMOTE: ", Counter(y_tr_bal))
 
     # Train classifier
     clf = RandomForestClassifier(n_estimators=300, random_state=42, class_weight="balanced")
@@ -223,6 +320,230 @@ def train_and_evaluate(df: pd.DataFrame, provider: str, test_num: int):
         "f1_1": report["1"]["f1-score"]
     }
 
+# === CrewAI Agent Definitions ===
+class IngestionAgent(Agent):
+    name: ClassVar[str] = "Ingestion"
+    role: ClassVar[str] = "Ingest and merge incident data"
+    goal: ClassVar[str] = "Produce a merged DataFrame of new incidents"
+    backstory: ClassVar[str] = "Agent responsible for fetching, de-duplicating, and merging incident data from CSV and web sources for each provider."
+    def run(self, provider: str):
+        df_csv = ingest_data.run(provider=provider)
+        matched_web, matched_csv = MATCHED_STORE.get(provider, (pd.DataFrame(), pd.DataFrame()))
+        return {"provider": provider, "df_csv": df_csv, "matched_web": matched_web}
+
+class FeAgent(Agent):
+    name: ClassVar[str] = "FeatureEngineering"
+    role: ClassVar[str] = "Engineer features from merged data"
+    goal: ClassVar[str] = "Create and transform features for model training"
+    backstory: ClassVar[str] = "Agent tasked with performing feature engineering, such as clustering and time-based features, on merged incident data."
+    def run(self, provider: str, df_csv: pd.DataFrame):
+        from sklearn.model_selection import train_test_split
+        # stratify on verified if available
+        if "verified" in df_csv.columns:
+            strat = df_csv["verified"].astype(str).str.upper().eq("TRUE")
+        else:
+            strat = None
+        _, test_df = train_test_split(df_csv, test_size=0.2, random_state=42, stratify=strat)
+        features_df = extract_features.run(df=test_df, provider=provider)
+        return {"provider": provider, "features_df": features_df}
+
+class TrainAgent(Agent):
+    name: ClassVar[str] = "TrainAndEval"
+    role: ClassVar[str] = "Train and evaluate incident classifier"
+    goal: ClassVar[str] = "Fit and assess a RandomForest model for incident classification"
+    backstory: ClassVar[str] = "Agent responsible for training and evaluating a RandomForest classifier using engineered features and reporting performance metrics."
+    test_num: int = 0
+    def run(self, provider: str, features_df: pd.DataFrame):
+        # LLM-assisted hyperparameter selection for number of trees
+        from collections import Counter
+        y = features_df["verified"].astype(str).str.upper().eq("TRUE").astype(int)
+        prompt = (
+            f"For provider {provider}, given class imbalance {Counter(y)}, "
+            "recommend the number of trees for the RandomForestClassifier."
+        )
+        resp_trees = llm_llama.invoke(prompt).content
+        try:
+            n_trees = int(resp_trees.strip().split()[0])
+        except:
+            n_trees = 300
+        # Patch train_and_evaluate to use n_trees
+        def train_and_evaluate_with_trees(df, provider, test_num):
+            from sklearn.model_selection import train_test_split
+            from imblearn.over_sampling import SMOTE
+            from sklearn.ensemble import RandomForestClassifier
+            from sklearn.metrics import balanced_accuracy_score, classification_report, confusion_matrix
+            import matplotlib.pyplot as plt
+            from collections import Counter
+
+            # Select features
+            raw_features = [
+                "text",
+                "user/totalTweets",
+                "user/totalFollowing",
+                "user/totalFollowers",
+                "timestamp",
+                "cluster_size",
+                "cluster_frequency",
+                "inter_arrival",
+                "count_1h",
+                "hour",
+                "weekday",
+                "count_1h_z"
+            ]
+            feature_cols = [
+                "timestamp",
+                "cluster_size",
+                "cluster_frequency",
+                "inter_arrival",
+                "count_1h",
+                "hour",
+                "weekday",
+                "count_1h_z"
+            ]
+
+            if test_num == 1:
+                feature_set = raw_features
+                print(f"\n=== Test #{test_num}: Raw Features for {provider} ===")
+            else:
+                feature_set = feature_cols
+                print(f"\n=== Test #{test_num}: Engineered Features for {provider} ===")
+
+            # Prepare X and y
+            X = df[feature_set].apply(pd.to_numeric, errors="coerce").fillna(0)
+            y = df["verified"].astype(str).str.upper().eq("TRUE").astype(int)
+
+            # Split and balance
+            X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2,
+                                                      random_state=42, stratify=y)
+            # Print cluster_size distribution in test set
+            from collections import Counter
+            cluster_dist = Counter(X_te["cluster_size"])
+#           print("Test set cluster_size distribution:", cluster_dist)
+            sm = SMOTE(random_state=42)
+            print("Before SMOTE:", Counter(y_tr))
+            X_tr_bal, y_tr_bal = sm.fit_resample(X_tr, y_tr)
+            print("After SMOTE: ", Counter(y_tr_bal))
+
+            # Train classifier
+            clf = RandomForestClassifier(n_estimators=n_trees, random_state=42, class_weight="balanced")
+            clf.fit(X_tr_bal, y_tr_bal)
+
+            # Evaluate
+            acc = clf.score(X_te, y_te)
+            bal_acc = balanced_accuracy_score(y_te, clf.predict(X_te))
+            report = classification_report(y_te, clf.predict(X_te), digits=3, output_dict=True, zero_division=0)
+            print(f"Features used: {feature_set}")
+            print(f"Accuracy: {acc:.3f}")
+            print(f"Balanced accuracy: {bal_acc:.3f}")
+            print("Report (weighted):")
+            # Print human-readable report
+            print(classification_report(y_te, clf.predict(X_te), digits=3, zero_division=0))
+
+            # Plot F1 scores
+            f1_scores = {"0": report["0"]["f1-score"], "1": report["1"]["f1-score"]}
+            plt.figure(figsize=(4,3))
+            plt.bar(f1_scores.keys(), f1_scores.values())
+            plt.title(f"F1 Scores Test {test_num} - {provider}")
+            plt.ylim(0,1)
+            fname = f"f1_{provider.lower()}_test{test_num}.png"
+            plt.savefig(fname)
+            plt.close()
+            print(f"[INFO] F1 chart saved to {fname}")
+
+            return {
+                "accuracy": acc,
+                "balanced_accuracy": bal_acc,
+                "f1_0": report["0"]["f1-score"],
+                "f1_1": report["1"]["f1-score"]
+            }
+        metrics = train_and_evaluate_with_trees(df=features_df, provider=provider, test_num=self.test_num)
+        return {"provider": provider, f"metrics_test{self.test_num}": metrics}
+
+class ReportAgent(Agent):
+    name: ClassVar[str] = "MatchedReport"
+    role: ClassVar[str] = "Generate incident summary report"
+    goal: ClassVar[str] = "Produce an LLM-based summary of matched incidents"
+    backstory: ClassVar[str] = "Agent that summarizes matched incidents using an LLM, providing concise reporting for downstream analysis."
+    def run(self, provider: str, df_csv: pd.DataFrame, matched_web: pd.DataFrame, features_df: pd.DataFrame, **kwargs):
+        # Recompute the test set split as in TrainAgent (stratified by verified)
+        from sklearn.model_selection import train_test_split
+        # Defensive: ensure "verified" column exists and is correct type
+        if "verified" in df_csv.columns:
+            stratify_col = df_csv["verified"].astype(str).str.upper().eq("TRUE")
+        else:
+            stratify_col = None
+        _, test_df = train_test_split(
+            df_csv, test_size=0.2, random_state=42,
+            stratify=stratify_col if stratify_col is not None else None
+        )
+        # Merge features_df with test_df on timestamp to get test_features
+        # We want to sample up to 30 rows per cluster from test set
+        test_features = pd.merge(
+            features_df,
+            test_df[["timestamp"]],
+            on="timestamp",
+            how="inner"
+        )
+        test_features["date"] = pd.to_datetime(test_features["timestamp"], unit="s", errors="coerce").dt.date
+        # Compute average cluster size in test set
+        avg_cluster_size = test_features["cluster_size"].mean()
+        # Only keep clusters larger than average
+        large_clusters = test_features[test_features["cluster_size"] > avg_cluster_size]
+        reports = []
+        # For each cluster in test set above average size, sample up to 30 rows
+        for cluster_id, group in large_clusters.groupby("cluster_id"):
+            group_sample = group.sample(min(len(group), 30), random_state=42)
+            # Get the date window for this cluster
+            cluster_dates = group_sample["date"].unique()
+            # CSV test rows: tweet snippets and timestamps
+            csv_lines = []
+            for _, row in group_sample.iterrows():
+                ts = pd.to_datetime(row["timestamp"], unit="s", errors="coerce").isoformat()
+                # Extract tweet text content
+                text = row.get("text", "")
+                if not text:
+                    text = row.get("quotedTweet/text", "")
+                text = text.strip()
+                if text:
+                    snippet = text.replace("\n", " ")
+                    csv_lines.append(f"- CSV Tweet: “{snippet[:100]}…” at {ts}")
+                else:
+                    csv_lines.append(f"- CSV: <no tweet text> at {ts}")
+            # Find any matched_web rows whose timestamp date falls within the cluster's date window
+            web_lines = []
+            if not matched_web.empty and "timestamp" in matched_web.columns:
+                matched_web["date"] = pd.to_datetime(matched_web["timestamp"], unit="s", errors="coerce").dt.date
+                web_matches = matched_web[matched_web["date"].isin(cluster_dates)]
+                for _, wrow in web_matches.iterrows():
+                    web_lines.append(
+                        f"- Web: timestamp={wrow['timestamp']}, desc={wrow.get('description','')[:50]}"
+                    )
+            # Compose the bullet format for LLM
+            lines = csv_lines + web_lines
+            reports.append(
+                f"Cluster {cluster_id}:\n" +
+                "\n".join(lines)
+            )
+        prompt = (
+            "You are analyzing clusters of customer‐complaint tweets about service outages. "
+            "For each cluster, you will see up to 30 sample tweets (in quotes) with their timestamps. "
+            "Use these tweet snippets—and any matching web logs—to categorize the cluster under a telecommunications service type, for example: "
+            "'Internet issue', 'Landline issue', 'Mobile issue', 'Other'. "
+            "Then write summaries using the format:\n\n"
+            "Cluster {cluster_id}:\n"
+            "- Date: YYYY-MM-DD\n"
+            "- Time: describe times\n"
+            "- Incident Type: your chosen category\n"
+            "- Description: concise summary based on tweet text and web logs. If the Incident Type is 'Other', make sure to print the issue type here.\n\n"
+            "If you label a cluster as 'Other', include in the Description the predominant complaint type mentioned in the tweets (e.g. 'internet issue', 'phone issue', etc.). "
+            "Do not output any clusters that are not Telecommunications service complaints. Some clusters might be about non-incidents. Do not print them.\n\n"
+            "Here are the clusters:\n\n"
+            + "\n\n".join(reports) +
+            "\n\nPlease summarize accordingly."
+        )
+        report = llm_llama.invoke(prompt).content
+        return {"provider": provider, "report": report}
+
 # For synthetic incident simulation
 from scipy.stats import ks_2samp
 
@@ -231,23 +552,7 @@ from scipy.stats import ks_2samp
 # ----------------------------------------------------------------------
 from pathlib import Path
 
-CSV_DIR = Path("/Users/denizaskin/telus-incident-mgmt-copilot/notebooks/wxO_api/TELUS_incident_management/csv_files")
-XML_DIR = Path("/Users/denizaskin/telus-incident-mgmt-copilot/notebooks/wxO_api/TELUS_incident_management/xml_files")
-
-# Dynamically map providers to XML files in xml_files directory
-xml_files_list = list(XML_DIR.glob("*.xml"))
-XML_FILES = {}
-for prov in ("BELL", "ROGERS", "TELUS"):
-    matched = next((f for f in xml_files_list if prov.lower() in f.name.lower()), None)
-    if matched:
-        XML_FILES[prov] = matched
-    else:
-        raise FileNotFoundError(f"No XML file matching provider {prov} in {XML_DIR}")
-# print("DEBUG: XML_FILES mapping →", XML_FILES)
-# print("DEBUG: Effective XML_FILES →")
-# for k, v in XML_FILES.items():
-#     print(f"  {k}: {v}")
-
+CSV_DIR = Path("csv_files")
 def _load_csv(name: str, provider: str) -> pd.DataFrame:
     path = CSV_DIR / name
     if not path.exists():
@@ -299,31 +604,13 @@ for csv_path in csv_files_list:
     df = _load_csv(csv_path.name, prov)
     CSV_MAPPING[prov] = (csv_path.name, df)
 
+#
 # Print distribution of verified vs unverified in each CSV before analysis
-print("\nCSV Incidence Distribution (pre-analysis):")
-for provider, (_, df) in CSV_MAPPING.items():
-    total = len(df)
-    pos = df["verified"].astype(str).str.upper().eq("TRUE").sum() if "verified" in df.columns else 0
-    neg = total - pos
-    print(f"  {provider}: Total={total}, Positive={pos}, Negative={neg}")
+# (Removed: not needed for minimal workflow)
 
+#
 # 1‑A.  Print unique verified user/url entries
-def _print_verified(df: pd.DataFrame, provider: str) -> None:
-    if {"verified", "user/url"}.issubset(df.columns):
-        urls = (
-            df[df["verified"].astype(str).str.upper().eq("TRUE")]["user/url"]
-            .dropna()
-            .unique()
-        )
-        print(f"\n{provider} – verified user/url entries ({len(urls)})")
-        for u in urls:
-            print(f"  {u}")
-    else:
-        print(f"\n{provider}: missing `verified` / `user/url` columns → skipped")
-
-## Uncomment if you want to print the names of the accounts
-# for d, p in ((df_rogers, "ROGERS"), (df_bell, "BELL"), (df_telus, "TELUS")):
-#     _print_verified(d, p)
+# (Removed: not needed for minimal workflow)
 
 feature_cols = [
     "timestamp",
@@ -385,112 +672,55 @@ def _extract_cur_norm(text: str) -> tuple[float|None, float|None]:
         return None, None
 
 
-# New simplified xml_to_rows function (returns empty DataFrame if file missing, for all providers)
-def xml_to_rows(xml_path: Path, provider: str) -> pd.DataFrame:
-    # Always use the absolute paths mapping
-    absolute_paths = {
-        "BELL":   Path("/Users/denizaskin/telus-incident-mgmt-copilot/notebooks/wxO_api/TELUS_incident_management/xml_files/Bell_Canada_2025.xml"),
-        "ROGERS": Path("/Users/denizaskin/telus-incident-mgmt-copilot/notebooks/wxO_api/TELUS_incident_management/xml_files/Rogers_2025.xml"),
-        "TELUS":  Path("/Users/denizaskin/telus-incident-mgmt-copilot/notebooks/wxO_api/TELUS_incident_management/xml_files/TELUS_2025.xml"),
-    }
-    xml_file = absolute_paths.get(provider)
-    if not xml_file or not xml_file.exists():
-        print(f"{provider}: XML file not found → {xml_file}")
-        return pd.DataFrame(columns=["cluster_size"])
-    # If file exists, parse it minimally and return an empty DataFrame to allow XML phase to run
-    print(f"{provider}: XML file found → {xml_file}")
-    return pd.DataFrame(columns=["cluster_size"])
+# XML loading and xml_to_rows: removed
 
-# ----------------------------------------------------------------------
-# 5.  Per-provider processing (manual)
-# ----------------------------------------------------------------------
-for prov, (_csv, df) in CSV_MAPPING.items():
-    print(f"\n============================================================ Processing {prov} ============================================================")
-    # --- Web‑scraping & Incident Matching ---
-    print(f"\n--- Web‑scraping & Incident Matching for {prov} ---")
-    incidents = scrape_all(prov)
-    df_web = pd.DataFrame(incidents)
-    # Ensure web DataFrame has a timestamp column for matching
-    if "timestamp" not in df_web.columns:
-        if "date" in df_web.columns:
-            df_web["timestamp"] = (
-                pd.to_datetime(df_web["date"], errors="coerce")
-                  .astype("int64") // 1_000_000_000
-            )
-        elif "datetime" in df_web.columns:
-            df_web["timestamp"] = (
-                pd.to_datetime(df_web["datetime"], errors="coerce")
-                  .astype("int64") // 1_000_000_000
-            )
-        else:
-            raise KeyError("No viable date column in web-scraped data for provider " + prov)
-    # Count by source
-    for src, cnt in df_web['source'].value_counts().items():
-        print(f"  {src} rows: {cnt}")
-    total_web = len(df_web)
-    print(f"  Total web rows: {total_web}")
-    # Match on dates
-    df_csv_dates = pd.to_datetime(df['timestamp'], unit='s').dt.date
-    df_web_dates = pd.to_datetime(df_web['timestamp'], unit='s').dt.date
-    shared_dates = sorted(set(df_csv_dates) & set(df_web_dates))
-    print(f"  Shared days count: {len(shared_dates)}")
-    print(f"  Shared dates: {shared_dates}")
-    # Match on ISO week numbers
-    df_csv_weeks = pd.to_datetime(df['timestamp'], unit='s').dt.isocalendar().week
-    df_web_weeks = pd.to_datetime(df_web['timestamp'], unit='s').dt.isocalendar().week
-    shared_weeks = sorted(set(df_csv_weeks) & set(df_web_weeks))
-    print(f"  Shared weeks count: {len(shared_weeks)}")
-    print(f"  Shared weeks: {shared_weeks}")
-    merged_df = ingest_data.run(provider=prov)
-    features_df = extract_features.run(df=merged_df, provider=prov)
-    metrics1 = train_and_evaluate.run(df=features_df, provider=prov, test_num=1)
-    metrics2 = train_and_evaluate.run(df=features_df, provider=prov, test_num=2)
+# === CrewAI Workflow ===
+ing_agent = IngestionAgent()
+fe_agent = FeAgent()
+train1_agent = TrainAgent(test_num=1)
+report_agent = ReportAgent()
 
-# # === CrewAI Workflow ===
-# workflow = Flow(
-#     name="IncidentClassificationPipeline",
-#     agents=[ingestion_agent, fe_agent, train1_agent, train2_agent],
-#     hook=lambda data: print(f"[Agent Outputs for {data.get('provider')}]: {data}")
-# )
-#
-# # Run the workflow for each provider
-# for provider in ["ROGERS", "TELUS", "BELL"]:
-#     workflow.kickoff(inputs={"provider": provider})
-# ----------------------------------------------------------------------
-# 6. Visualize and Save Performance Metrics
-# ----------------------------------------------------------------------
-print("\n=== Creating performance visualizations ===")
+# Print agent responsibilities
+print("\nAgent responsibilities:")
+print("IngestionAgent: fetches CSV and web-scraped incidents, normalizes timestamps, filters to CSV test-set dates, and stores matched pairs")
+print("FeAgent: computes time-series and clustering features on CSV incidents, with LLM-guided clustering window selection")
+print("TrainAgent: balances the training split with SMOTE, uses LLM to choose RandomForest tree count, trains & evaluates the classifier, and saves metrics and charts")
+print("ReportAgent: groups matched incidents into time-based clusters, includes CSV and web context, and generates LLM summaries per cluster")
 
-metrics_data = {
-    "Accuracy": {"BELL": 0.652, "ROGERS": 0.614, "TELUS": 0.610},
-    "Balanced Accuracy": {"BELL": 0.600, "ROGERS": 0.617, "TELUS": 0.619},
-    "Precision (0)": {"BELL": 0.956, "ROGERS": 0.972, "TELUS": 0.794},
-    "Precision (1)": {"BELL": 0.096, "ROGERS": 0.071, "TELUS": 0.407},
+# === Manual Agentic Execution ===
+for provider in CSV_MAPPING.keys():
+    print(f"\n=== Running agents for {provider} ===")
+    # Ingest and merge data
+    print("-> Agent: IngestionAgent running")
+    ingestion_output = ing_agent.run(provider=provider)
+    df_csv = ingestion_output["df_csv"]
+    matched_web = ingestion_output["matched_web"]
+    # Feature engineering
+    print("-> Agent: FeAgent running")
+    fe_output = fe_agent.run(provider=provider, df_csv=df_csv)
+    features_df = fe_output["features_df"]
+    # Training and evaluation (Test 1)
+    print("-> Agent: TrainAgent running")
+    train_output = train1_agent.run(provider=provider, features_df=features_df)
+    # The train_and_evaluate tool already prints metrics and charts
+    # LLM report
+    print("-> Agent: ReportAgent running")
+    report_output = report_agent.run(provider=provider, df_csv=df_csv, matched_web=matched_web, features_df=features_df)
+    print("\nLLM Matched-Incidents Summary:")
+    if report_output.get("report"):
+        print(report_output["report"])
+    else:
+        print(f"No matched incidents for provider {provider}.")
+
+# === Workflow Visualization ===
+from graphviz import Source
+
+# Manually define the agentic workflow graph
+dot_source = """
+digraph IncidentClassificationPipeline {
+    IngestionAgent -> FeAgent -> TrainAndEval -> MatchedReport;
 }
-
-def create_bar_chart(data_dict, title, filename):
-    plt.figure(figsize=(8, 6))
-    plt.bar(data_dict.keys(), data_dict.values(), color='skyblue')
-    plt.title(title)
-    plt.ylabel('Score')
-    plt.ylim(0, 1)
-    plt.savefig(filename)
-    plt.close()
-
-# Generate all bar charts
-chart_files = []
-for metric, values in metrics_data.items():
-    fname = f"{metric.lower().replace(' ', '_')}.png"
-    create_bar_chart(values, f"{metric} by Provider", fname)
-    chart_files.append((metric, fname))
-
-# Create PowerPoint presentation
-prs = Presentation()
-for title, img_path in chart_files:
-    slide = prs.slides.add_slide(prs.slide_layouts[5])
-    slide.shapes.title.text = f"{title} by Provider"
-    slide.shapes.add_picture(img_path, Inches(1), Inches(2), width=Inches(6), height=Inches(4))
-
-pptx_file = "Model_Performance_Presentation.pptx"
-prs.save(pptx_file)
-print(f"[INFO] Presentation saved as {pptx_file}")
+"""
+graph = Source(dot_source, format="png")
+graph.render(filename="agentic_workflow", cleanup=True)
+print("Generated agentic workflow visualization: agentic_workflow.png")
