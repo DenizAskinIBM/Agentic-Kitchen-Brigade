@@ -155,50 +155,12 @@ def extract_features(df: pd.DataFrame, provider: str):
     """
     Perform preprocessing and feature engineering on the merged DataFrame for the given provider.
     """
-    # LLM-assisted hyperparameter selection for clustering window with rich context
-    # Compute time-based statistics
-    times = pd.to_datetime(df["timestamp"], unit="s", errors="coerce").sort_values()
-    span_hours = ((times.iloc[-1] - times.iloc[0]).total_seconds() / 3600) if len(times) > 1 else 0
-    inter = times.diff().dropna().dt.total_seconds()
-    median_gap = inter.median() if not inter.empty else 0
-    p90_gap = inter.quantile(0.90) if not inter.empty else 0
-    distinct_days = df["timestamp"].fillna(0).pipe(
-        lambda s: pd.to_datetime(s, unit="s", errors="coerce").dt.date.nunique()
-    )
-    var_gap = inter.var() if not inter.empty else 0
-    prompt = (
-        f"I have {len(df)} incidents over a {span_hours:.1f}-hour period "
-        f"spanning {distinct_days} distinct days. The median time between incidents is "
-        f"{median_gap:.1f}s with a 90th-percentile gap of {p90_gap:.1f}s, and a variance "
-        f"of {var_gap:.1f}. Based on this, what DBSCAN eps (in seconds) would cluster together "
-        "incidents that represent the same outage event?"
-    )
-    resp = llm_llama.invoke(prompt).content
-    try:
-        eps = int(resp.strip().split()[0])
-    except:
-        eps = 3600
-    # print(f"[extract_features] DataFrame shape: {df.shape} for provider: {provider}")
-    # Feature engineering: clustering on timestamp
+    # Feature engineering: clustering on timestamp with fixed DBSCAN parameters
     # Ensure timestamp numeric
     df["timestamp"] = pd.to_numeric(df["timestamp"], errors="coerce").fillna(0)
-    # DBSCAN clustering by timestamp (1h window)
     filled_ts = df["timestamp"].fillna(df["timestamp"].median())
-    # --- k-distance plot to calibrate eps ---
-    # Compute k-distance (k = min_samples before clustering)
-    k = 5
-    nbrs = NearestNeighbors(n_neighbors=k).fit(filled_ts.values.reshape(-1,1))
-    distances, _ = nbrs.kneighbors(filled_ts.values.reshape(-1,1))
-    k_dist = np.sort(distances[:, -1])
-    # Save the k-distance plot for manual inspection
-    plt.figure(); plt.plot(k_dist); plt.title(f"k-distance for {provider}"); plt.savefig(f"k_distance_{provider}.png"); plt.close()
-    # Automatic knee detection
-    knee = KneeLocator(range(len(k_dist)), k_dist, curve="convex", direction="increasing")
-    if knee.knee is not None:
-        eps = k_dist[knee.knee]
-    else:
-        eps = eps  # fallback to LLM or default
-    db = DBSCAN(eps=eps, min_samples=5)
+    # Use fixed DBSCAN parameters: eps=3600, min_samples=3
+    db = DBSCAN(eps=3600, min_samples=3)
     ids = db.fit_predict(filled_ts.values.reshape(-1,1))
     df["cluster_id"] = ids
     # cluster size
@@ -354,19 +316,7 @@ class TrainAgent(Agent):
     backstory: ClassVar[str] = "Agent responsible for training and evaluating a RandomForest classifier using engineered features and reporting performance metrics."
     test_num: int = 0
     def run(self, provider: str, features_df: pd.DataFrame):
-        # LLM-assisted hyperparameter selection for number of trees
-        from collections import Counter
-        y = features_df["verified"].astype(str).str.upper().eq("TRUE").astype(int)
-        prompt = (
-            f"For provider {provider}, given class imbalance {Counter(y)}, "
-            "recommend the number of trees for the RandomForestClassifier."
-        )
-        resp_trees = llm_llama.invoke(prompt).content
-        try:
-            n_trees = int(resp_trees.strip().split()[0])
-        except:
-            n_trees = 300
-        # Patch train_and_evaluate to use n_trees
+        # Always use n_estimators=300 for RandomForestClassifier
         def train_and_evaluate_with_trees(df, provider, test_num):
             from sklearn.model_selection import train_test_split
             from imblearn.over_sampling import SMOTE
@@ -425,7 +375,7 @@ class TrainAgent(Agent):
             print("After SMOTE: ", Counter(y_tr_bal))
 
             # Train classifier
-            clf = RandomForestClassifier(n_estimators=n_trees, random_state=42, class_weight="balanced")
+            clf = RandomForestClassifier(n_estimators=300, random_state=42, class_weight="balanced")
             clf.fit(X_tr_bal, y_tr_bal)
 
             # Evaluate
