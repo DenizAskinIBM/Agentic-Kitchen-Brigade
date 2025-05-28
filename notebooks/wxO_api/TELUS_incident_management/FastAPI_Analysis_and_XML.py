@@ -15,7 +15,7 @@ import pickle
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, f1_score
 
 # FastAPI imports for API endpoint
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 
 app = FastAPI()
 
@@ -28,9 +28,11 @@ async def get_summary(provider: str):
     Runs the full pipeline for a given provider and returns only the LLM-generated summary.
     """
     result = run_provider_pipeline(provider)
-    # Extract the textual report from the ReportAgent output
-    summary = result["report"]["report"]
-    return {"provider": provider, "summary": summary}
+    raw = result["report"]["report"]
+    # Strip any code fences and leading labels
+    clean = re.sub(r"```.*?\n", "", raw)
+    clean = clean.replace("```", "").strip()
+    return Response(content=clean, media_type="application/json")
 
 # Add endpoint for all providers' summaries
 @app.get("/summary/")
@@ -38,11 +40,15 @@ async def get_summary_all():
     """
     Runs the full pipeline for every provider and returns a mapping of provider to its LLM-generated summary.
     """
-    summaries: dict[str, str] = {}
+    parts = []
     for provider in CSV_MAPPING.keys():
         result = run_provider_pipeline(provider)
-        summaries[provider] = result["report"]["report"]
-    return summaries
+        raw = result["report"]["report"]
+        clean = re.sub(r"```.*?\n", "", raw)
+        clean = clean.replace("```", "").strip()
+        parts.append(clean)
+    content = "\n\n".join(parts)
+    return Response(content=content, media_type="application/json")
 
 import sys
 print("Running:", __file__)
@@ -508,26 +514,27 @@ class ReportAgent(Agent):
                 "\n".join(lines)
             )
         prompt = (
-            "You are given the following clusters (each begins with 'Cluster <id>'):\n\n"
+            "You are given the following clusters, each starting with 'Cluster <id>:' and bullet lines:\n\n"
             + "\n\n".join(reports)
             + "\n\n"
-            "Produce only valid JSON matching this schema and nothing else:\n"
+            "Generate output strictly in this JSON format and nothing else:\n"
             "{\n"
             "  \"incidents\": [\n"
             "    {\n"
             "      \"incident_number\": \"INC988<cluster_id>\",\n"
             "      \"short_description\": \"<brief summary>\",\n"
-            "      \"priority\": \"<priority>\",\n"
-            "      \"additionalinfo\": \"<additional info>\",\n"
+            "      \"priority\": \"<Critical|High|Medium|Low>\",\n"
+            "      \"additionalinfo\": \"<source>\",\n"
             "      \"created_on\": \"<YYYY-MM-DD>\"\n"
-            "    },\n"
-            "    ...\n"
+            "    }\n"
+            "    /* repeat entries for each incident, comma-separated */\n"
             "  ]\n"
-            "}\n\n"
-            "Instructions:\n"
-            "1. For each cluster, extract the cluster ID number and set \"incident_number\" to \"INC988\" followed by that ID (e.g. Cluster 1 -> INCIDENT_NUMBER \"INC9881\"). Do not use hyphens in incident numbers like 'INC988-1'; just do 'INC988-1'\n"
-            "2. Populate \"short_description\", \"priority\", \"additionalinfo\", and \"created_on\" (use today’s date in YYYY-MM-DD format).\n"
-            "3. Do not output any text other than the JSON object.\n"
+            "}\n"
+            "Rules:\n"
+            "1. Map each cluster to one incident entry in the array.\n"
+            "2. Use the cluster ID to form \"incident_number\" as \"INC988\" plus the cluster ID (e.g. Cluster 2 -> \"INC9882\").\n"
+            "3. Fill in \"short_description\", \"priority\", \"additionalinfo\", and \"created_on\" fields per cluster.\n"
+            "4. Do not output any comments, code, or text outside the JSON object.\n"
         )
         report = llm_llama.invoke(prompt).content
         return {"provider": provider, "report": report}
