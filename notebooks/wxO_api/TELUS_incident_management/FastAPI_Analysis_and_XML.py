@@ -10,11 +10,27 @@ import re
 import datetime as dt
 import matplotlib.pyplot as plt
 from graphviz import Source
+import argparse
+import pickle
+from sklearn.metrics import accuracy_score, balanced_accuracy_score, f1_score
 
 # FastAPI imports for API endpoint
 from fastapi import FastAPI
 
 app = FastAPI()
+
+# ----------------------------------------------------------------------
+# FastAPI endpoint for LLM summary only
+# ----------------------------------------------------------------------
+@app.get("/summary/{provider}")
+async def get_summary(provider: str):
+    """
+    Runs the full pipeline for a given provider and returns only the LLM-generated summary.
+    """
+    result = run_provider_pipeline(provider)
+    # Extract the textual report from the ReportAgent output
+    summary = result["report"]["report"]
+    return {"provider": provider, "summary": summary}
 
 import sys
 print("Running:", __file__)
@@ -481,7 +497,7 @@ class ReportAgent(Agent):
             )
         prompt = (
             "Multi-Incident Report Summary\n\n"
-            "For each cluster listed below, generate an incident entry in the exact format:\n"\
+            "For each cluster listed below, generate an incident entry in the exact format (do not print anything other than this):\n"\
             '''Incident 1
                 • Number: INC001
                 • Summary: Internet issue
@@ -496,6 +512,7 @@ class ReportAgent(Agent):
                 • Additional Info: This cluster appears to be related to a telecommunications service issue, with users complaining about problems with their mobile data and internet service. Some users are also complaining about billing concerns and poor customer service.
                 • Occurred On: 2023-11-13 to 2023-11-27'''
             "Here Number: INC001 and Number: INC002 are the incident numbers derived from the cluster ID. For example, if the cluster ID is 1, then Number: INC001, if the cluster ID is 10, then Number: INC0010, etc.\n\n"   
+            "Do not print anything other than the incidents in the format above. Do not print any comments.\n\n"
             "Here are the clusters:\n\n"
             + "\n\n".join(reports)
         )
@@ -675,120 +692,104 @@ def run_provider_pipeline(provider: str):
     }
 
 
-# ----------------------------------------------------------------------
-# FastAPI endpoint for running the pipeline
-# ----------------------------------------------------------------------
-@app.get("/run/{provider}")
-async def run_provider(provider: str):
-    try:
-        # Execute full pipeline
-        result = run_provider_pipeline(provider)
-        # Ingestion output
-        ingest = result["ingestion"]
-        df_csv = ingest["df_csv"]
-        matched_web = ingest["matched_web"]
-        ingestion_json = {
-            "provider": provider,
-            "df_csv": df_csv.to_dict(orient="records"),
-            "matched_web": matched_web.to_dict(orient="records")
-        }
-        # Feature engineering output
-        fe = result["feature_engineering"]
-        features_df = fe["features_df"]
-        fe_json = {
-            "provider": provider,
-            "features": features_df.to_dict(orient="records")
-        }
-        # Training output
-        tr = result["training"]
-        # Convert any numpy scalars to native Python
-        def _to_native(val):
-            try:
-                return val.item()
-            except:
-                return val
-        train_json = {"provider": provider}
-        for key, metrics in tr.items():
-            if isinstance(metrics, dict):
-                train_json[key] = {mk: _to_native(mv) for mk, mv in metrics.items()}
-            else:
-                train_json[key] = _to_native(metrics)
-        # Report output
-        report_json = result["report"]
-        return {
-            "ingestion": ingestion_json,
-            "feature_engineering": fe_json,
-            "training": train_json,
-            "report": report_json
-        }
-    except Exception as e:
-        return {"error": str(e)}
-
-# Endpoint to run only the ingestion agent
-@app.get("/ingest/{provider}")
-async def run_ingest(provider: str):
-    try:
-        output = ing_agent.run(provider=provider)
-        df_csv = output["df_csv"]
-        matched_web = output.get("matched_web", pd.DataFrame())
-        return {
-            "provider": provider,
-            "df_csv": df_csv.to_dict(orient="records"),
-            "matched_web": matched_web.to_dict(orient="records")
-        }
-    except Exception as e:
-        return {"error": str(e)}
-
-# Endpoint to run only feature engineering agent
-@app.get("/features/{provider}")
-async def run_features(provider: str):
-    try:
-        ingest_out = ing_agent.run(provider=provider)
-        df_csv = ingest_out["df_csv"]
-        fe_out = fe_agent.run(provider=provider, df_csv=df_csv)
-        features_df = fe_out["features_df"]
-        return {
-            "provider": provider,
-            "features": features_df.to_dict(orient="records")
-        }
-    except Exception as e:
-        return {"error": str(e)}
-
-# Endpoint to run only the training agent (test 1)
-@app.get("/train/{provider}")
-async def run_train(provider: str):
-    try:
-        ingest_out = ing_agent.run(provider=provider)
-        df_csv = ingest_out["df_csv"]
-        fe_out = fe_agent.run(provider=provider, df_csv=df_csv)
-        features_df = fe_out["features_df"]
-        train_out = train1_agent.run(provider=provider, features_df=features_df)
-        return train_out
-    except Exception as e:
-        return {"error": str(e)}
-
-# Endpoint to run only the reporting agent
-@app.get("/report/{provider}")
-async def run_report(provider: str):
-    try:
-        ingest_out = ing_agent.run(provider=provider)
-        df_csv = ingest_out["df_csv"]
-        matched_web = ingest_out.get("matched_web", pd.DataFrame())
-        fe_out = fe_agent.run(provider=provider, df_csv=df_csv)
-        features_df = fe_out["features_df"]
-        report_out = report_agent.run(
-            provider=provider,
-            df_csv=df_csv,
-            matched_web=matched_web,
-            features_df=features_df
-        )
-        return report_out
-    except Exception as e:
-        return {"error": str(e)}
 
 # ----------------------------------------------------------------------
-# Run as Uvicorn app if executed directly
+# Run as script: train/test/serve API
 # ----------------------------------------------------------------------
+
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("FastAPI_Analysis_and_XML:app", host="0.0.0.0", port=8080, reload=True)
+    import argparse
+    import pickle
+    from sklearn.metrics import accuracy_score, balanced_accuracy_score, f1_score
+    from sklearn.model_selection import train_test_split
+    from imblearn.over_sampling import SMOTE
+    from sklearn.ensemble import RandomForestClassifier
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--mode",
+        choices=["train", "test", "serve"],
+        default="serve",
+        help="train: train models and save; test: load models and evaluate; serve: launch API"
+    )
+    parser.add_argument(
+        "--provider",
+        type=str,
+        default=None,
+        help="Specify a single provider (e.g., BELL, ROGERS, TELUS). If omitted, all providers will be processed."
+    )
+    args = parser.parse_args()
+
+    def _get_labels(df):
+        return df["verified"].astype(str).str.upper().eq("TRUE").astype(int).values
+
+    if args.mode == "train":
+        # Determine which providers to run
+        providers = [args.provider] if args.provider else list(CSV_MAPPING.keys())
+        for provider in providers:
+            _, df_csv = CSV_MAPPING[provider]
+            print(f"Training and testing for {provider}...")
+            # Feature engineering
+            df_feat = extract_features.run(df=df_csv, provider=provider)
+            X = df_feat[feature_cols].apply(pd.to_numeric, errors="coerce").fillna(0).values
+            y = _get_labels(df_csv)
+            # Split and balance
+            X_tr, X_te, y_tr, y_te = train_test_split(
+                X, y, test_size=0.2, random_state=42, stratify=y
+            )
+            sm = SMOTE(random_state=42)
+            X_tr_bal, y_tr_bal = sm.fit_resample(X_tr, y_tr)
+            # Train and save
+            clf = RandomForestClassifier(
+                n_estimators=300, random_state=42, class_weight="balanced"
+            )
+            clf.fit(X_tr_bal, y_tr_bal)
+            model_path = f"classifier_{provider}.pkl"
+            with open(model_path, "wb") as f:
+                pickle.dump(clf, f)
+            # Evaluate
+            y_pred = clf.predict(X_te)
+            acc = accuracy_score(y_te, y_pred)
+            bal_acc = balanced_accuracy_score(y_te, y_pred)
+            f1 = f1_score(y_te, y_pred, zero_division=0)
+            print(f"{provider} - Accuracy: {acc:.3f}, Balanced Accuracy: {bal_acc:.3f}, F1: {f1:.3f}")
+            print(f"Saved model to {model_path}")
+
+    elif args.mode == "test":
+        # Determine which providers to run
+        providers = [args.provider] if args.provider else list(CSV_MAPPING.keys())
+        for provider in providers:
+            _, df_csv = CSV_MAPPING[provider]
+            print(f"\n=== Running full pipeline for {provider} ===")
+            # Ingestion
+            print("-> Agent: IngestionAgent running")
+            ingestion_output = ing_agent.run(provider=provider)
+            df_csv = ingestion_output["df_csv"]
+            matched_web = ingestion_output["matched_web"]
+            # Feature Engineering
+            print("-> Agent: FeAgent running")
+            fe_output = fe_agent.run(provider=provider, df_csv=df_csv)
+            features_df = fe_output["features_df"]
+            # Training & Evaluation
+            print("-> Agent: TrainAgent running")
+            train_output = train1_agent.run(provider=provider, features_df=features_df)
+            # Reporting
+            print("-> Agent: ReportAgent running")
+            report_output = report_agent.run(
+                provider=provider,
+                df_csv=df_csv,
+                matched_web=matched_web,
+                features_df=features_df
+            )
+            # Print final summary
+            print("\nReport Agent Output:")
+            print(report_output["report"])
+
+    else:
+        import uvicorn
+        uvicorn.run(
+            "FastAPI_Analysis_and_XML:app",
+            host="0.0.0.0",
+            port=8080,
+            reload=True
+        )
