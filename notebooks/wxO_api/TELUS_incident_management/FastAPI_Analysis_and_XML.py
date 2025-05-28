@@ -508,25 +508,26 @@ class ReportAgent(Agent):
                 "\n".join(lines)
             )
         prompt = (
-            "Multi-Incident Report Summary\n\n"
-            "For each cluster listed below, generate an incident entry in the exact format (do not print anything other than this):\n"\
-            '''Incident 1
-                • Number: INC001
-                • Summary: Internet issue
-                • Priority: medium
-                • Additional Info: This cluster appears to be related to a telecommunications service outage, specifically an internet issue. Multiple users are complaining about a lack of internet or cable service, with some mentioning that they have been without service for 24 hours.
-                • Occurred On: 2023-10-13 to 2023-11-12
-
-            Incident 2
-                • Number: INC002
-                • Summary: Mobile issue and Internet issue
-                • Priority: high
-                • Additional Info: This cluster appears to be related to a telecommunications service issue, with users complaining about problems with their mobile data and internet service. Some users are also complaining about billing concerns and poor customer service.
-                • Occurred On: 2023-11-13 to 2023-11-27'''
-            "Here Number: INC001 and Number: INC002 are the incident numbers derived from the cluster ID. For example, if the cluster ID is 1, then Number: INC001, if the cluster ID is 10, then Number: INC0010, etc.\n\n"   
-            "Do not print anything other than the incidents in the format above. Do not print any comments.\n\n"
-            "Here are the clusters:\n\n"
+            "You are given the following clusters (each begins with 'Cluster <id>'):\n\n"
             + "\n\n".join(reports)
+            + "\n\n"
+            "Produce only valid JSON matching this schema and nothing else:\n"
+            "{\n"
+            "  \"incidents\": [\n"
+            "    {\n"
+            "      \"incident_number\": \"INC988<cluster_id>\",\n"
+            "      \"short_description\": \"<brief summary>\",\n"
+            "      \"priority\": \"<priority>\",\n"
+            "      \"additionalinfo\": \"<additional info>\",\n"
+            "      \"created_on\": \"<YYYY-MM-DD>\"\n"
+            "    },\n"
+            "    ...\n"
+            "  ]\n"
+            "}\n\n"
+            "Instructions:\n"
+            "1. For each cluster, extract the cluster ID number and set \"incident_number\" to \"INC988\" followed by that ID (e.g. Cluster 1 -> INCIDENT_NUMBER \"INC9881\"). Do not use hyphens in incident numbers like 'INC988-1'; just do 'INC988-1'\n"
+            "2. Populate \"short_description\", \"priority\", \"additionalinfo\", and \"created_on\" (use today’s date in YYYY-MM-DD format).\n"
+            "3. Do not output any text other than the JSON object.\n"
         )
         report = llm_llama.invoke(prompt).content
         return {"provider": provider, "report": report}
