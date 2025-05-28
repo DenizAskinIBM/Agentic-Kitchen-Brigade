@@ -32,6 +32,18 @@ async def get_summary(provider: str):
     summary = result["report"]["report"]
     return {"provider": provider, "summary": summary}
 
+# Add endpoint for all providers' summaries
+@app.get("/summary/")
+async def get_summary_all():
+    """
+    Runs the full pipeline for every provider and returns a mapping of provider to its LLM-generated summary.
+    """
+    summaries: dict[str, str] = {}
+    for provider in CSV_MAPPING.keys():
+        result = run_provider_pipeline(provider)
+        summaries[provider] = result["report"]["report"]
+    return summaries
+
 import sys
 print("Running:", __file__)
 
@@ -786,6 +798,17 @@ if __name__ == "__main__":
             print(report_output["report"])
 
     else:
+        # Expose local port via ngrok for external debugging
+        try:
+            from pyngrok import ngrok
+            from pyngrok.exception import PyngrokNgrokError
+            ngrok.set_auth_token(os.getenv("NGROK_AUTHTOKEN", ""))
+            public_url = ngrok.connect(8080).public_url
+            print(f"🚀 ngrok tunnel established at {public_url}")
+        except ImportError:
+            print("⚠️ pyngrok not installed; install with 'pip install pyngrok' to enable ngrok tunneling.")
+        except PyngrokNgrokError as e:
+            print(f"⚠️ ngrok tunnel error: {e}. Continuing without ngrok.")
         import uvicorn
         uvicorn.run(
             "FastAPI_Analysis_and_XML:app",

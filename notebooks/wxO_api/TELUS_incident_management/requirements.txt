@@ -4,3 +4,5 @@ scikit-learn
 feedparser
 imblearn
 graphviz
+pyngrok
+uvicorn

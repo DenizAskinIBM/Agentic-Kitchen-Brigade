@@ -29,3 +29,8 @@ This repository is based on the initial content from:
 ## watsonx Orchestrate tenant
 
 Access has been granted to Client Engineering 4 watsonx Orchestrate tenant
+
+## Install and setup ngrok via
+
+brew install ngrok
+ngrok config add-authtoken 2xivoRfoFY9wmtUhpkEtTe1YtM7_4qFsj4nxpy51szF7Rxfsn
