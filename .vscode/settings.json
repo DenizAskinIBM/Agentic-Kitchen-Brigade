@@ -1,7 +1,17 @@
 {
+    "wcaForGP.enable": true,
+    "python.terminal.activateEnvironment": true,
+    "python.linting.enabled": false,
+    "python.analysis.typeCheckingMode": "off",
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportMissingImports": "none",
+        "reportUndefinedVariable": "none",
+        "reportUnboundVariable": "none",
+        "reportSyntaxError": "warning"
+    },
     "workbench.colorCustomizations": {
-        "activityBar.background": "#0003A2",
-        "titleBar.activeBackground": "#0004E2",
-        "titleBar.activeForeground": "#FEFEFF"
+        "activityBar.background": "#173325",
+        "titleBar.activeBackground": "#204834",
+        "titleBar.activeForeground": "#F8FCFA"
     }
 }

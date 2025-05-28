@@ -13,6 +13,28 @@ from openai import OpenAI
 from ibm_watsonx_ai import APIClient, Credentials
 from tqdm.auto import tqdm
 import numpy as np
+from typing_extensions import TypedDict
+
+class KitchenState(TypedDict, total=False):
+    docs: list[str]
+    command: str
+    plan: str
+    chef_de_cuisine: str
+    sous_chef: str
+    saucier: str
+    chef_de_partie: str
+    cuisinier: str
+    commis: str
+    apprenti: str
+    plongeur: str
+    rotisseur: str
+    grillardin: str
+    poissonnier: str
+    entremetier: str
+    garde_manger: str
+    tournant: str
+    patissier: str
+    final_recipe: str
 
 # capture all LLM interactions
 llm_log = []
@@ -95,25 +117,101 @@ kitchen_roles = [
     "garde_manger", "tournant", "patissier"
 ]
 
+# ------------------------------------------------
+# 3b. Define kitchen brigade agent descriptions
+# ------------------------------------------------
+role_descriptions = {
+    "chef_de_cuisine": (
+        "Chef de cuisine (Head Chef): Oversees all kitchen operations, creates menus, "
+        "and ensures the quality of dishes."
+    ),
+    "sous_chef": (
+        "Sous-chef (Deputy Chef): Second-in-command, manages staff, handles inventories, "
+        "and steps in for the head chef when needed."
+    ),
+    "saucier": (
+        "Saucier (Sauce Chef): Prepares sauces, stews, and hot hors d'oeuvres, "
+        "ensuring flavors are perfected."
+    ),
+    "chef_de_partie": (
+        "Chef de partie (Station Chef): Responsible for a specific station in the kitchen, "
+        "such as grill, pastry, or fish."
+    ),
+    "cuisinier": (
+        "Cuisinier (Line Cook): Executes individual dishes on the line, "
+        "following recipes and timing to coordinate service."
+    ),
+    "commis": (
+        "Commis (Junior Cook): Assists station chefs, performs prep work, "
+        "and learns station operations."
+    ),
+    "apprenti": (
+        "Apprenti (Apprentice): Beginner cook learning the fundamentals of kitchen work, "
+        "assisting commis and chefs."
+    ),
+    "plongeur": (
+        "Plongeur (Dishwasher): Handles cleaning of dishes, utensils, and kitchen equipment, "
+        "maintaining sanitation."
+    ),
+    "rotisseur": (
+        "Rôtisseur (Roast Chef): Manages roasted dishes and grilling, "
+        "ensuring proper cooking of meats."
+    ),
+    "grillardin": (
+        "Grillardin (Grill Chef): Specializes in grilling meats and fishes, "
+        "maintaining grill stations."
+    ),
+    "poissonnier": (
+        "Poissonnier (Fish Chef): Prepares fish and seafood dishes, "
+        "overseeing fish station."
+    ),
+    "entremetier": (
+        "Entremetier (Vegetable Chef): Prepares vegetables, soups, pastas, "
+        "and egg dishes."
+    ),
+    "garde_manger": (
+        "Garde-manger (Pantry Chef): Handles cold dishes, salads, "
+        "pates, and charcuterie."
+    ),
+    "tournant": (
+        "Tournant (Swing Cook): Floats between stations as needed, "
+        "filling in for absent station chefs."
+    ),
+    "patissier": (
+        "Pâtissier (Pastry Chef): Prepares pastries, desserts, "
+        "breads, and other baked goods."
+    ),
+}
+
+# Backup original descriptions for good scenarios
+original_role_descriptions = role_descriptions.copy()
+# Define bad descriptions for testing
+bad_role_descriptions = { key: "Generic task performer." for key in role_descriptions }
+
 def make_agents(llm: LLMWrapper):
-    def agent_func(role):
-        def func(task):
-            prompt = f"[{role}] {task}"
-            stage = f"Execute: {role}"
-            response = llm.generate(prompt)
-            llm_log.append((stage, prompt, response))
-            return response
-        return func
-    return {
-        role: agent_func(role)
-        for role in kitchen_roles
-    }
+    """
+    Create a mapping of brigade roles to agent functions.
+    Each agent returns a string describing the action taken.
+    """
+    agents = {}
+    for key, description in role_descriptions.items():
+        def make_func(role_key, desc):
+            def func(task: str) -> dict:
+                # Agent performs the task and returns its output under its role name
+                return {
+                    role_key: f"[{desc}] I have completed the task: '{task}'."
+                }
+            # Attach description metadata to the function for router use
+            func.description = desc
+            return func
+        agents[key] = make_func(key, description)
+    return agents
 
 # ------------------------------------------------
 # 4. Build LangGraph workflow
 # ------------------------------------------------
 def build_workflow(llm: LLMWrapper, dish: str):
-    graph = StateGraph(dict)  # use dict as state schema
+    graph = StateGraph(KitchenState)  # use KitchenState as state schema
 
     def retriever(state):
         state["docs"] = retrieve(state["command"])
@@ -125,7 +223,7 @@ def build_workflow(llm: LLMWrapper, dish: str):
         prompt = (
             f"You are the Chef de cuisine tasked to prepare {dish}. Based on these recipes:\n"
             f"{docs}\n\n"
-            "Plan step-by-step subtasks and assign each to a kitchen role in the format 'Role: Task description'."
+            "Plan step-by-step subtasks as a plain list (one per line, no role assignments)."
         )
         stage = "Planning"
         response = llm.generate(prompt)
@@ -133,28 +231,47 @@ def build_workflow(llm: LLMWrapper, dish: str):
         state["plan"] = response
         return state
 
-    def executor(state):
-        print("[⚙️] Executing subtasks")
+    def router(state):
+        print("[🔀] Routing tasks to agents")
+        subtasks = [line.strip() for line in state["plan"].split("\n") if line.strip()]
+        routing: dict[str, list[str]] = {}
         agents = make_agents(llm)
-        subtasks = [
-            line.strip()
-            for line in state["plan"].split("\n")
-            if line.strip()
-        ]
-        results = []
         for task in subtasks:
-            if ":" in task:
-                role, desc = task.split(":", 1)
-                key = role.strip().lower().replace(" ", "_")
-                # The agent function logs its own LLM call
-                result = agents.get(key, lambda _: f"Unknown role: {role}")(desc.strip())
-                results.append(f"{role}: {result}")
-        state["results"] = results
+            assigned = None
+            for role_key, agent_func in agents.items():
+                # use the description attached to the function
+                keywords = agent_func.description.lower().split()
+                if any(word in task.lower() for word in keywords):
+                    assigned = role_key
+                    break
+            if assigned is None:
+                assigned = "chef_de_cuisine"
+            routing.setdefault(assigned, []).append(task)
+        state["routing"] = routing
+        return state
+
+    def executor(state):
+        print("[⚙️] Executing routed tasks")
+        agents = make_agents(llm)
+        # For each role, run all its tasks through the corresponding agent
+        for role_key, tasks in state.get("routing", {}).items():
+            results = []
+            for task in tasks:
+                # agent returns {role_key: message}
+                res_dict = agents[role_key](task)
+                results.append(res_dict[role_key])
+            # Store combined execution output under the role key
+            state[role_key] = "\n".join(results)
         return state
 
     def aggregator(state):
         print("[📦] Aggregating results into final recipe")
-        joined = "\n".join(state["results"])
+        # Gather each role's output from state
+        outputs = []
+        for role in role_descriptions.keys():
+            if role in state:
+                outputs.append(state[role])
+        joined = "\n".join(outputs)
         prompt = (
             "Combine these executed subtasks into a final recipe with clear steps:\n"
             f"{joined}"
@@ -162,19 +279,20 @@ def build_workflow(llm: LLMWrapper, dish: str):
         stage = "Aggregation"
         response = llm.generate(prompt)
         llm_log.append((stage, prompt, response))
+        # Preserve previous state and add final_recipe
         state["final_recipe"] = response
         return state
 
     graph.add_node("retriever", retriever)
     graph.add_node("planner", planner)
+    graph.add_node("router", router)
     graph.add_node("executor", executor)
     graph.add_node("aggregator", aggregator)
 
-    # Define entrypoint to ensure graph has a START node
     graph.add_edge(START, "retriever")
-
     graph.add_edge("retriever", "planner")
-    graph.add_edge("planner", "executor")
+    graph.add_edge("planner", "router")
+    graph.add_edge("router", "executor")
     graph.add_edge("executor", "aggregator")
     return graph
 
@@ -182,7 +300,37 @@ def build_workflow(llm: LLMWrapper, dish: str):
 # 5. Main entrypoint
 # ------------------------------------------------
 if __name__ == "__main__":
-    dish = input("Please enter the dish you want to prepare: ")
+    scenarios = [
+        {
+            "label": "Simple Hamburger - Bad Descriptions",
+            "command": "Make me a Hamburger",
+            "description_set": "bad"
+        },
+        {
+            "label": "Custom Hamburger - Bad Descriptions",
+            "command": (
+                "Make me a Hamburger with no lettuce and only one tomato, "
+                "ketchup and make sure to simmer the pan you cook the Hamburger on "
+                "for 5 minutes with butter"
+            ),
+            "description_set": "bad"
+        },
+        {
+            "label": "Simple Hamburger - Good Descriptions",
+            "command": "Make me a Hamburger",
+            "description_set": "good"
+        },
+        {
+            "label": "Custom Hamburger - Good Descriptions",
+            "command": (
+                "Make me a Hamburger with no lettuce and only one tomato, "
+                "ketchup and make sure to simmer the pan you cook the Hamburger on "
+                "for 5 minutes with butter"
+            ),
+            "description_set": "good"
+        },
+    ]
+
     provider = os.getenv("LLM_PROVIDER", "openai").lower()
     model_name = os.getenv("LLM_MODEL", "gpt-4o")
     llm = LLMWrapper(provider, model_name)
@@ -235,57 +383,60 @@ if __name__ == "__main__":
     globals()['index'] = index
     globals()['texts'] = texts
 
-    workflow = build_workflow(llm, dish)
+    for scenario in scenarios:
+        label = scenario["label"]
+        command = scenario["command"]
+        desc_set = scenario.get("description_set")
+        if desc_set == "bad":
+            role_descriptions.clear()
+            role_descriptions.update(bad_role_descriptions)
+        elif desc_set == "good":
+            role_descriptions.clear()
+            role_descriptions.update(original_role_descriptions)
+        print(f"\n=== Scenario: {label} ===\n")
+        workflow = build_workflow(llm, command)
+        initial_state = {"command": command}
+        final_state = workflow.compile().invoke(initial_state)
 
-    initial_state = {"command": dish}
-    final_state = workflow.compile().invoke(initial_state)
+        plan_text = final_state.get("plan", "")
+        # Gather execution outputs from all agent keys
+        execution_results = [
+            value for key, value in final_state.items()
+            if key not in {"docs", "command", "plan", "routing", "final_recipe"}
+        ]
+        final_recipe = final_state.get("final_recipe", "")
 
-    plan_text = final_state.get("plan", "")
-    execution_results = final_state.get("results", [])
-    final_recipe = final_state.get("final_recipe", "")
+        print("=== Plan ===\n")
+        print(plan_text)
+        print("\n=== Execution Results ===\n")
+        print("\n".join(execution_results))
+        print("\n=== Final Recipe ===\n")
+        print(final_recipe)
 
-    print("[✅] Final recipe generated, running judges...")
+        # Judges Evaluation
+        planning_prompt = (
+            "As the Planning Judge, evaluate the quality of the routing/assignment of subtasks to specific kitchen roles. "
+            "Discuss if each assignment makes sense given the role's responsibilities.\n\n"
+            f"Plan Provided:\n{plan_text}"
+        )
+        print("[👩‍⚖️] Planning Judge Evaluation")
+        stage = "Planning Judge"
+        prompt = planning_prompt
+        planning_feedback = llm.generate(prompt)
+        llm_log.append((stage, prompt, planning_feedback))
 
-    print("\n=== Final Recipe ===\n")
-    print(final_recipe)
+        exec_prompt = (
+            "As the Execution Judge, evaluate the quality of execution of the subtasks and the final recipe. "
+            "Focus on efficiency (minimal number of steps) and effectiveness (completion and correctness).\n\n"
+            f"Subtasks Results:\n{chr(10).join(execution_results)}\n\n"
+            f"Final Recipe:\n{final_recipe}"
+        )
+        print("[👨‍⚖️] Execution Judge Evaluation")
+        stage = "Execution Judge"
+        prompt = exec_prompt
+        execution_feedback = llm.generate(prompt)
+        llm_log.append((stage, prompt, execution_feedback))
 
-    # ------------------------------------------------
-    # 6. Judges Evaluation
-    # ------------------------------------------------
-    # Planning Judge: evaluate quality of routing/assignment
-    planning_prompt = (
-        "As the Planning Judge, evaluate the quality of the routing/assignment of subtasks to specific kitchen roles. "
-        "Discuss if each assignment makes sense given the role's responsibilities.\n\n"
-        f"Plan Provided:\n{plan_text}"
-    )
-    print("[👩‍⚖️] Planning Judge Evaluation")
-    stage = "Planning Judge"
-    prompt = planning_prompt
-    planning_feedback = llm.generate(prompt)
-    llm_log.append((stage, prompt, planning_feedback))
-
-    # Execution Judge: evaluate efficiency & effectiveness
-    exec_prompt = (
-        "As the Execution Judge, evaluate the quality of execution of the subtasks and the final recipe. "
-        "Focus on efficiency (minimal number of steps) and effectiveness (completion and correctness).\n\n"
-        f"Subtasks Results:\n{chr(10).join(execution_results)}\n\n"
-        f"Final Recipe:\n{final_recipe}"
-    )
-    print("[👨‍⚖️] Execution Judge Evaluation")
-    stage = "Execution Judge"
-    prompt = exec_prompt
-    execution_feedback = llm.generate(prompt)
-    llm_log.append((stage, prompt, execution_feedback))
-
-    print("\n=== Judge Results ===\n")
-    print("-- Planning Judge --\n", planning_feedback)
-    print("\n-- Execution Judge --\n", execution_feedback)
-
-    print("\n=== LLM Interactions Report ===\n")
-    for stage, prompt, response in llm_log:
-        print(f"--- {stage} ---")
-        print("Prompt:")
-        print(prompt)
-        print("\nResponse:")
-        print(response)
-        print("\n")
+        print("\n=== Judge Results ===\n")
+        print("-- Planning Judge --\n", planning_feedback)
+        print("\n-- Execution Judge --\n", execution_feedback)
