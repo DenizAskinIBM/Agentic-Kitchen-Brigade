@@ -1,0 +1,49 @@
+Here is the time-step sequence of tasks for preparing the Roast Chicken with Root Vegetables, starting at T0:
+
+**T0:**
+- Chef de Cuisine 1: Review recipe and assign tasks.
+- Garde Manger 1: Gather all ingredients and tools needed, including the chicken, vegetables, herbs, and seasonings.
+- Plongeur 1: Ensure that all cooking equipment and utensils are clean and available.
+
+**T1:**
+- Sous Chef 1: Remove the neck and giblets from the chicken, rinse it inside and out, and pat it dry with paper towels.
+- Entremetier 1: Preheat the oven to 425°F (220°C).
+- Apprenti 1: Peel and chop vegetables, including onions, potatoes, and carrots.
+
+**T2:**
+- Chef de Partie 1: Season the cavity and outside of the chicken with salt and pepper, insert garlic and rosemary inside the cavity.
+- Commis 1: Line a 9x13 inch baking dish with aluminum foil.
+- Rotisseur 1: Arrange half of the chopped onions on the bottom of the roasting pan.
+
+**T3:**
+- Cuisinier 1: Arrange the potatoes and carrots around the chicken in the baking dish.
+- Saucier 1: Pour balsamic vinegar and red wine over the chicken and vegetables, and drizzle with olive oil.
+- Tournant 1: Cover the pan with foil and place it in the refrigerator.
+
+**T4 (after a few hours or overnight marination):**
+- Nonce 1: Remove the pan from the refrigerator and let it rest at room temperature for about an hour.
+
+**T5:**
+- Chef de Cuisine 1: Insert the dish into the oven and bake at 425°F (220°C) for 40-45 minutes, covered with foil.
+  
+**T6:**
+- Rotisseur 1: Remove the foil and baste the chicken. Reduce oven temperature to 350°F (175°C) and continue roasting.
+
+**T7:**
+- Entremetier 1: Baste the chicken again every half hour, ensuring the internal temperature reaches 165°F (74°C) and vegetables are tender.
+
+**T8 (after roasting completion):**
+- Chef de Partie 1: Remove the chicken from the oven and cover it with a foil tent, allowing it to rest for 10-20 minutes.
+- Poissonnier 1: Strain and skim the pan juices, then boil to reduce with Saucier 1.
+- Saucier 1: Season the jus reduction to taste.
+
+**T9:**
+- Grillardin 1: Carve the chicken and arrange on a serving platter.
+- Chef de Cuisine 1: Drizzle the balsamic reduction over the chicken and vegetables.
+- Patissier 1: Optionally sprinkle freshly chopped parsley and squeeze lemon juice over the dish.
+
+**T10:**
+- Chef de Cuisine 1: Final check and presentation of the dish for serving.
+- Plongeur 1: Clean up cooking area and wash used utensils and equipment.
+
+Enjoy the delicious meal with your team!
