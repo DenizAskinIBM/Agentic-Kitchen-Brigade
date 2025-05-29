@@ -6,3 +6,5 @@ imblearn
 graphviz
 pyngrok
 uvicorn
+streamlit
+dotenv

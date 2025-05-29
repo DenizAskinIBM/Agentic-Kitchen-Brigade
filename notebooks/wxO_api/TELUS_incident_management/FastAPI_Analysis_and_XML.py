@@ -127,7 +127,7 @@ from crewai import Agent
 from crewai.flow.flow import Flow
 
 # === CrewAI Tools ===
-from crewai.tools import tool
+from ibm_watsonx_orchestrate.agent_builder.tools import tool, ToolPermission
 
 @tool
 def ingest_data(provider: str):
@@ -321,230 +321,6 @@ def train_and_evaluate(df: pd.DataFrame, provider: str, test_num: int):
         "f1_1": report["1"]["f1-score"]
     }
 
-# === CrewAI Agent Definitions ===
-class IngestionAgent(Agent):
-    name: ClassVar[str] = "Ingestion"
-    role: ClassVar[str] = "Ingest and merge incident data"
-    goal: ClassVar[str] = "Produce a merged DataFrame of new incidents"
-    backstory: ClassVar[str] = "Agent responsible for fetching, de-duplicating, and merging incident data from CSV and web sources for each provider."
-    def run(self, provider: str):
-        df_csv = ingest_data.run(provider=provider)
-        matched_web, matched_csv = MATCHED_STORE.get(provider, (pd.DataFrame(), pd.DataFrame()))
-        return {"provider": provider, "df_csv": df_csv, "matched_web": matched_web}
-
-class FeAgent(Agent):
-    name: ClassVar[str] = "FeatureEngineering"
-    role: ClassVar[str] = "Engineer features from merged data"
-    goal: ClassVar[str] = "Create and transform features for model training"
-    backstory: ClassVar[str] = "Agent tasked with performing feature engineering, such as clustering and time-based features, on merged incident data."
-    def run(self, provider: str, df_csv: pd.DataFrame):
-        from sklearn.model_selection import train_test_split
-        # stratify on verified if available
-        if "verified" in df_csv.columns:
-            strat = df_csv["verified"].astype(str).str.upper().eq("TRUE")
-        else:
-            strat = None
-        _, test_df = train_test_split(df_csv, test_size=0.2, random_state=42, stratify=strat)
-        features_df = extract_features.run(df=test_df, provider=provider)
-        return {"provider": provider, "features_df": features_df}
-
-class TrainAgent(Agent):
-    name: ClassVar[str] = "TrainAndEval"
-    role: ClassVar[str] = "Train and evaluate incident classifier"
-    goal: ClassVar[str] = "Fit and assess a RandomForest model for incident classification"
-    backstory: ClassVar[str] = "Agent responsible for training and evaluating a RandomForest classifier using engineered features and reporting performance metrics."
-    test_num: int = 0
-    def run(self, provider: str, features_df: pd.DataFrame):
-        # Always use n_estimators=300 for RandomForestClassifier
-        def train_and_evaluate_with_trees(df, provider, test_num):
-            from sklearn.model_selection import train_test_split
-            from imblearn.over_sampling import SMOTE
-            from sklearn.ensemble import RandomForestClassifier
-            from sklearn.metrics import balanced_accuracy_score, classification_report, confusion_matrix
-            import matplotlib.pyplot as plt
-            from collections import Counter
-
-            # Select features
-            raw_features = [
-                "text",
-                "user/totalTweets",
-                "user/totalFollowing",
-                "user/totalFollowers",
-                "timestamp",
-                "cluster_size",
-                "cluster_frequency",
-                "inter_arrival",
-                "count_1h",
-                "hour",
-                "weekday",
-                "count_1h_z"
-            ]
-            feature_cols = [
-                "timestamp",
-                "cluster_size",
-                "cluster_frequency",
-                "inter_arrival",
-                "count_1h",
-                "hour",
-                "weekday",
-                "count_1h_z"
-            ]
-
-            if test_num == 1:
-                feature_set = raw_features
-                print(f"\n=== Test #{test_num}: Raw Features for {provider} ===")
-            else:
-                feature_set = feature_cols
-                print(f"\n=== Test #{test_num}: Engineered Features for {provider} ===")
-
-            # Prepare X and y
-            X = df[feature_set].apply(pd.to_numeric, errors="coerce").fillna(0)
-            y = df["verified"].astype(str).str.upper().eq("TRUE").astype(int)
-
-            # Split and balance
-            X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2,
-                                                      random_state=42, stratify=y)
-            # Print cluster_size distribution in test set
-            from collections import Counter
-            cluster_dist = Counter(X_te["cluster_size"])
-#           print("Test set cluster_size distribution:", cluster_dist)
-            sm = SMOTE(random_state=42)
-            print("Before SMOTE:", Counter(y_tr))
-            X_tr_bal, y_tr_bal = sm.fit_resample(X_tr, y_tr)
-            print("After SMOTE: ", Counter(y_tr_bal))
-
-            # Train classifier
-            clf = RandomForestClassifier(n_estimators=300, random_state=42, class_weight="balanced")
-            clf.fit(X_tr_bal, y_tr_bal)
-
-            # Evaluate
-            acc = clf.score(X_te, y_te)
-            bal_acc = balanced_accuracy_score(y_te, clf.predict(X_te))
-            report = classification_report(y_te, clf.predict(X_te), digits=3, output_dict=True, zero_division=0)
-            print(f"Features used: {feature_set}")
-            print(f"Accuracy: {acc:.3f}")
-            print(f"Balanced accuracy: {bal_acc:.3f}")
-            print("Report (weighted):")
-            # Print human-readable report
-            print(classification_report(y_te, clf.predict(X_te), digits=3, zero_division=0))
-
-            # Plot F1 scores
-            f1_scores = {"0": report["0"]["f1-score"], "1": report["1"]["f1-score"]}
-            plt.figure(figsize=(4,3))
-            plt.bar(f1_scores.keys(), f1_scores.values())
-            plt.title(f"F1 Scores Test {test_num} - {provider}")
-            plt.ylim(0,1)
-            fname = f"f1_{provider.lower()}_test{test_num}.png"
-            plt.savefig(fname)
-            plt.close()
-            print(f"[INFO] F1 chart saved to {fname}")
-
-            return {
-                "accuracy": acc,
-                "balanced_accuracy": bal_acc,
-                "f1_0": report["0"]["f1-score"],
-                "f1_1": report["1"]["f1-score"]
-            }
-        metrics = train_and_evaluate_with_trees(df=features_df, provider=provider, test_num=self.test_num)
-        return {"provider": provider, f"metrics_test{self.test_num}": metrics}
-
-class ReportAgent(Agent):
-    name: ClassVar[str] = "MatchedReport"
-    role: ClassVar[str] = "Generate incident summary report"
-    goal: ClassVar[str] = "Produce an LLM-based summary of matched incidents"
-    backstory: ClassVar[str] = "Agent that summarizes matched incidents using an LLM, providing concise reporting for downstream analysis."
-    def run(self, provider: str, df_csv: pd.DataFrame, matched_web: pd.DataFrame, features_df: pd.DataFrame, **kwargs):
-        # Recompute the test set split as in TrainAgent (stratified by verified)
-        from sklearn.model_selection import train_test_split
-        # Defensive: ensure "verified" column exists and is correct type
-        if "verified" in df_csv.columns:
-            stratify_col = df_csv["verified"].astype(str).str.upper().eq("TRUE")
-        else:
-            stratify_col = None
-        _, test_df = train_test_split(
-            df_csv, test_size=0.2, random_state=42,
-            stratify=stratify_col if stratify_col is not None else None
-        )
-        # Merge features_df with test_df on timestamp to get test_features
-        # We want to sample up to 30 rows per cluster from test set
-        test_features = pd.merge(
-            features_df,
-            test_df[["timestamp"]],
-            on="timestamp",
-            how="inner"
-        )
-        test_features["date"] = pd.to_datetime(test_features["timestamp"], unit="s", errors="coerce").dt.date
-        # Compute average cluster size in test set
-        avg_cluster_size = test_features["cluster_size"].mean()
-        # Only keep clusters larger than average
-        large_clusters = test_features[test_features["cluster_size"] > avg_cluster_size]
-        reports = []
-        # For each cluster in test set above average size, sample up to 30 rows
-        for cluster_id, group in large_clusters.groupby("cluster_id"):
-            group_sample = group.sample(min(len(group), 30), random_state=42)
-            # Get the date window for this cluster
-            cluster_dates = group_sample["date"].unique()
-            # CSV test rows: tweet snippets and timestamps
-            csv_lines = []
-            for _, row in group_sample.iterrows():
-                ts = pd.to_datetime(row["timestamp"], unit="s", errors="coerce").isoformat()
-                # Extract tweet text content
-                text = row.get("text", "")
-                if not text:
-                    text = row.get("quotedTweet/text", "")
-                text = text.strip()
-                if text:
-                    snippet = text.replace("\n", " ")
-                    csv_lines.append(f"- CSV Tweet: “{snippet[:100]}…” at {ts}")
-                else:
-                    csv_lines.append(f"- CSV: <no tweet text> at {ts}")
-            # Find any matched_web rows whose timestamp date falls within the cluster's date window
-            web_lines = []
-            if not matched_web.empty and "timestamp" in matched_web.columns:
-                matched_web["date"] = pd.to_datetime(matched_web["timestamp"], unit="s", errors="coerce").dt.date
-                web_matches = matched_web[matched_web["date"].isin(cluster_dates)]
-                for _, wrow in web_matches.iterrows():
-                    web_lines.append(
-                        f"- Web: timestamp={wrow['timestamp']}, desc={wrow.get('description','')[:50]}"
-                    )
-            # Compose the bullet format for LLM
-            lines = csv_lines + web_lines
-            reports.append(
-                f"Cluster {cluster_id}:\n" +
-                "\n".join(lines)
-            )
-        prompt = (
-            "You are given the following clusters, each starting with 'Cluster <id>:' and bullet lines:\n\n"
-            + "\n\n".join(reports)
-            + "\n\n"
-            "Generate output strictly in this JSON format and nothing else:\n"
-            "{\n"
-            "  \"incidents\": [\n"
-            "    {\n"
-            "      \"incident_number\": \"INC988<cluster_id>\",\n"
-            "      \"short_description\": \"<brief summary>\",\n"
-            "      \"priority\": \"<Critical|High|Medium|Low>\",\n"
-            "      \"additionalinfo\": \"<source>\",\n"
-            "      \"created_on\": \"<YYYY-MM-DD>\"\n"
-            "    }\n"
-            "    /* repeat entries for each incident, comma-separated */\n"
-            "  ]\n"
-            "}\n"
-            "Rules:\n"
-            "1. Map each cluster to one incident entry in the array.\n"
-            "2. Use the cluster ID to form \"incident_number\" as \"INC988\" plus the cluster ID (e.g. Cluster 2 -> \"INC9882\").\n"
-            "3. Fill in \"short_description\", \"priority\", \"additionalinfo\", and \"created_on\" fields per cluster.\n"
-            "4. Do not output any comments, code, or text outside the JSON object.\n"
-        )
-        report = llm_llama.invoke(prompt).content
-        return {"provider": provider, "report": report}
-
-# For synthetic incident simulation
-from scipy.stats import ks_2samp
-
-# ----------------------------------------------------------------------
-# 1.  Load CSV Datasets
-# ----------------------------------------------------------------------
 from pathlib import Path
 
 CSV_DIR = Path("csv_files")
@@ -669,158 +445,53 @@ def _extract_cur_norm(text: str) -> tuple[float|None, float|None]:
 
 # XML loading and xml_to_rows: removed
 
-# === CrewAI Workflow ===
-ing_agent = IngestionAgent()
-fe_agent = FeAgent()
-train1_agent = TrainAgent(test_num=1)
-report_agent = ReportAgent()
 
-# Print agent responsibilities
-print("\nAgent responsibilities:")
-print("IngestionAgent: fetches CSV and web-scraped incidents, normalizes timestamps, filters to CSV test-set dates, and stores matched pairs")
-print("FeAgent: computes time-series and clustering features on CSV incidents, with LLM-guided clustering window selection")
-print("TrainAgent: balances the training split with SMOTE, uses LLM to choose RandomForest tree count, trains & evaluates the classifier, and saves metrics and charts")
-print("ReportAgent: groups matched incidents into time-based clusters, includes CSV and web context, and generates LLM summaries per cluster")
 
-# ----------------------------------------------------------------------
-# Helper function for provider pipeline
-# ----------------------------------------------------------------------
-def run_provider_pipeline(provider: str):
-    if provider not in CSV_MAPPING:
-        raise ValueError(f"Invalid provider: {provider}")
-    # Ingest
-    ingestion_output = ing_agent.run(provider=provider)
-    df_csv = ingestion_output["df_csv"]
-    matched_web = ingestion_output["matched_web"]
-    # Feature engineering
-    fe_output = fe_agent.run(provider=provider, df_csv=df_csv)
-    features_df = fe_output["features_df"]
-    # Training (test 1)
-    train_output = train1_agent.run(provider=provider, features_df=features_df)
-    # Report
-    report_output = report_agent.run(
-        provider=provider,
-        df_csv=df_csv,
-        matched_web=matched_web,
-        features_df=features_df
-    )
-    return {
-        "ingestion": ingestion_output,
-        "feature_engineering": fe_output,
-        "training": train_output,
-        "report": report_output
+
+
+# === Watsonx Orchestrate Flow Definition ===
+
+# Add Orchestrate Flow imports after the last @tool function
+from ibm_watsonx_orchestrate.agent_builder.flow import FlowBuilder
+
+# === Define Watsonx Orchestrate Agentic Workflow ===
+flow = FlowBuilder(name="Incident_Management_Flow")
+
+flow.add_step(
+    name="Ingest",
+    tool="ingest_data",
+    inputs={"provider": "${provider}"}
+)
+flow.add_step(
+    name="FeatureEngineering",
+    tool="extract_features",
+    inputs={
+        "df": "${Ingest.output}",
+        "provider": "${provider}"
     }
+)
+flow.add_step(
+    name="TrainAndEvaluate",
+    tool="train_and_evaluate",
+    inputs={
+        "df": "${FeatureEngineering.output}",
+        "provider": "${provider}",
+        "test_num": 1
+    }
+)
+flow.add_step(
+    name="MatchedReport",
+    tool="report",
+    inputs={
+        "provider": "${provider}",
+        "df_csv": "${Ingest.df_csv}",
+        "matched_web": "${Ingest.matched_web}",
+        "features_df": "${FeatureEngineering.features_df}"
+    }
+)
 
+incident_flow = flow.build()
 
-
-# ----------------------------------------------------------------------
-# Run as script: train/test/serve API
-# ----------------------------------------------------------------------
-
-if __name__ == "__main__":
-    import argparse
-    import pickle
-    from sklearn.metrics import accuracy_score, balanced_accuracy_score, f1_score
-    from sklearn.model_selection import train_test_split
-    from imblearn.over_sampling import SMOTE
-    from sklearn.ensemble import RandomForestClassifier
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--mode",
-        choices=["train", "test", "serve"],
-        default="serve",
-        help="train: train models and save; test: load models and evaluate; serve: launch API"
-    )
-    parser.add_argument(
-        "--provider",
-        type=str,
-        default=None,
-        help="Specify a single provider (e.g., BELL, ROGERS, TELUS). If omitted, all providers will be processed."
-    )
-    args = parser.parse_args()
-
-    def _get_labels(df):
-        return df["verified"].astype(str).str.upper().eq("TRUE").astype(int).values
-
-    if args.mode == "train":
-        # Determine which providers to run
-        providers = [args.provider] if args.provider else list(CSV_MAPPING.keys())
-        for provider in providers:
-            _, df_csv = CSV_MAPPING[provider]
-            print(f"Training and testing for {provider}...")
-            # Feature engineering
-            df_feat = extract_features.run(df=df_csv, provider=provider)
-            X = df_feat[feature_cols].apply(pd.to_numeric, errors="coerce").fillna(0).values
-            y = _get_labels(df_csv)
-            # Split and balance
-            X_tr, X_te, y_tr, y_te = train_test_split(
-                X, y, test_size=0.2, random_state=42, stratify=y
-            )
-            sm = SMOTE(random_state=42)
-            X_tr_bal, y_tr_bal = sm.fit_resample(X_tr, y_tr)
-            # Train and save
-            clf = RandomForestClassifier(
-                n_estimators=300, random_state=42, class_weight="balanced"
-            )
-            clf.fit(X_tr_bal, y_tr_bal)
-            model_path = f"classifier_{provider}.pkl"
-            with open(model_path, "wb") as f:
-                pickle.dump(clf, f)
-            # Evaluate
-            y_pred = clf.predict(X_te)
-            acc = accuracy_score(y_te, y_pred)
-            bal_acc = balanced_accuracy_score(y_te, y_pred)
-            f1 = f1_score(y_te, y_pred, zero_division=0)
-            print(f"{provider} - Accuracy: {acc:.3f}, Balanced Accuracy: {bal_acc:.3f}, F1: {f1:.3f}")
-            print(f"Saved model to {model_path}")
-
-    elif args.mode == "test":
-        # Determine which providers to run
-        providers = [args.provider] if args.provider else list(CSV_MAPPING.keys())
-        for provider in providers:
-            _, df_csv = CSV_MAPPING[provider]
-            print(f"\n=== Running full pipeline for {provider} ===")
-            # Ingestion
-            print("-> Agent: IngestionAgent running")
-            ingestion_output = ing_agent.run(provider=provider)
-            df_csv = ingestion_output["df_csv"]
-            matched_web = ingestion_output["matched_web"]
-            # Feature Engineering
-            print("-> Agent: FeAgent running")
-            fe_output = fe_agent.run(provider=provider, df_csv=df_csv)
-            features_df = fe_output["features_df"]
-            # Training & Evaluation
-            print("-> Agent: TrainAgent running")
-            train_output = train1_agent.run(provider=provider, features_df=features_df)
-            # Reporting
-            print("-> Agent: ReportAgent running")
-            report_output = report_agent.run(
-                provider=provider,
-                df_csv=df_csv,
-                matched_web=matched_web,
-                features_df=features_df
-            )
-            # Print final summary
-            print("\nReport Agent Output:")
-            print(report_output["report"])
-
-    else:
-        # Expose local port via ngrok for external debugging
-        try:
-            from pyngrok import ngrok
-            from pyngrok.exception import PyngrokNgrokError
-            ngrok.set_auth_token(os.getenv("NGROK_AUTHTOKEN", ""))
-            public_url = ngrok.connect(8080).public_url
-            print(f"🚀 ngrok tunnel established at {public_url}")
-        except ImportError:
-            print("⚠️ pyngrok not installed; install with 'pip install pyngrok' to enable ngrok tunneling.")
-        except PyngrokNgrokError as e:
-            print(f"⚠️ ngrok tunnel error: {e}. Continuing without ngrok.")
-        import uvicorn
-        uvicorn.run(
-            "FastAPI_Analysis_and_XML:app",
-            host="0.0.0.0",
-            port=8080,
-            reload=True
-        )
+# To deploy this flow as a Watsonx Orchestrate Agent:
+# orchestrate agents import -f FastAPI_Analysis_and_XML.py -k python
+# orchestrate flows import -f FastAPI_Analysis_and_XML.py --flow incident_flow
