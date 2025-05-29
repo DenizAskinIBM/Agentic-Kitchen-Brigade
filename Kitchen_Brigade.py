@@ -253,7 +253,7 @@ def build_workflow(llm: LLMWrapper, dish: str):
             llm_log.append((stage, prompt, response))
 
             print(f"  [📝] Saving generated recipe")
-            with open(args.generated_recipe, "w") as f:
+            with open(os.path.join(args.output_directory, args.generated_recipe), "w") as f:
                 print(f"{response}", file=f)
 
         state["recipe"] = response
@@ -282,7 +282,7 @@ def build_workflow(llm: LLMWrapper, dish: str):
         state["plan"] = response
 
         print("  [📝] Saving execution plan")
-        with open(args.execution_plan, "w") as f:
+        with open(os.path.join(args.output_directory, args.execution_plan), "w") as f:
             print(f"{response}", file=f)
 
         return state
@@ -351,7 +351,7 @@ def build_workflow(llm: LLMWrapper, dish: str):
         state["final_recipe"] = response
 
         print("  [📦] Saving final recipe")
-        with open(args.final_recipe, "w") as f:
+        with open(os.path.join(args.output_directory, args.final_recipe), "w") as f:
             print(f"{response}", file=f)
 
         return state
@@ -381,6 +381,7 @@ if __name__ == "__main__":
     parser.add_argument("--provider", "-p", default="openai")
     parser.add_argument("--model", "-m", default="gpt-4o")
     group = parser.add_argument_group("Output files")
+    group.add_argument("--output-directory", '-o', default=".")
     group.add_argument("--generated-recipe", "--gr", default="generated-recipe.txt")
     group.add_argument("--final-recipe", "--fr", default="final-recipe.txt")
     group.add_argument("--execution-plan", "--ep", default="execution-plan.txt")
@@ -521,8 +522,8 @@ if __name__ == "__main__":
     llm_log.append((stage, prompt, planning_feedback))
 
     print("  [👩‍⚖️] Saving planning evaluation")
-    with open(args.plan_feedback, "w") as f:
-        print(f"{planning_feedback}")
+    with open(os.path.join(args.output_directory, args.plan_feedback), "w") as f:
+        print(f"{planning_feedback}", file=f)
 
     exec_prompt = (
         "As the Execution Judge, evaluate the quality of execution of the subtasks and the final recipe. "
@@ -537,8 +538,8 @@ if __name__ == "__main__":
     llm_log.append((stage, prompt, execution_feedback))
 
     print("  [👩‍⚖️] Saving execution evaluation")
-    with open(args.execution_feedback, "w") as f:
-        print(f"{execution_feedback}")
+    with open(os.path.join(args.output_directory, args.execution_feedback), "w") as f:
+        print(f"{execution_feedback}", file=f)
 
     print("\n=== Judge Results ===\n")
     print("-- Planning Judge --\n", planning_feedback)
