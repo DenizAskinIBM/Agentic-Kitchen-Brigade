@@ -1,8 +1,9 @@
 import argparse
 import collections
+import faiss  # ensure faiss is imported
+import json
 import os
 import pickle
-import faiss  # ensure faiss is imported
 import sys
 from dotenv import load_dotenv
 from langgraph.graph import StateGraph, START
@@ -100,112 +101,6 @@ def retrieve(query: str, k: int = 5):
     _, I = index.search(q_emb, k)
     return [texts[i] for i in I[0]]
 
-# ------------------------------------------------
-# 3. Define kitchen brigade agents and the number of each available
-# ------------------------------------------------
-kitchen_roles = {
-    "Chef de Cuisine": (1,
-        (
-            "Chef de cuisine (Head Chef): Oversees all kitchen operations, creates menus, "
-            "and ensures the quality of dishes."
-        )
-    ),
-    "Sous Chef": (1,
-        (
-            "Sous-chef (Deputy Chef): Second-in-command, manages staff, handles inventories, "
-            "and steps in for the head chef when needed."
-        )
-    ),
-    "Saucier": (1,
-        (
-            "Saucier (Sauce Chef): Prepares sauces, stews, and hot hors d'oeuvres, "
-            "ensuring flavors are perfected."
-        )
-    ),
-    "Chef de Partie": (1,
-        (
-            "Chef de partie (Station Chef): Responsible for a specific station in the kitchen, "
-            "such as grill, pastry, or fish."
-        )
-    ),
-    "Cuisinier": (1,
-        (
-            "Cuisinier (Line Cook): Executes individual dishes on the line, "
-            "following recipes and timing to coordinate service."
-        )
-    ),
-    "Commis": (1,
-        (
-            "Commis (Junior Cook): Assists station chefs, performs prep work, "
-            "and learns station operations."
-        )
-    ),
-    "Apprenti": (1,
-        (
-            "Apprenti (Apprentice): Beginner cook learning the fundamentals of kitchen work, "
-            "assisting commis and chefs."
-        )
-    ),
-    "Plongeur": (1,
-        (
-            "Plongeur (Dishwasher): Handles cleaning of dishes, utensils, and kitchen equipment, "
-            "maintaining sanitation."
-        )
-    ),
-    "Rotisseur": (1,
-        (
-            "Rôtisseur (Roast Chef): Manages roasted dishes and grilling, "
-            "ensuring proper cooking of meats."
-        )
-    ),
-    "Grillardin": (1,
-        (
-            "Grillardin (Grill Chef): Specializes in grilling meats and fishes, "
-            "maintaining grill stations."
-        )
-    ),
-    "Poissonnier": (1,
-        (
-            "Poissonnier (Fish Chef): Prepares fish and seafood dishes, "
-            "overseeing fish station."
-        )
-    ),
-    "Entremetier": (1,
-        (
-            "Entremetier (Vegetable Chef): Prepares vegetables, soups, pastas, "
-            "and egg dishes."
-        )
-    ),
-    "Garde Manger": (1,
-        (
-            "Garde-manger (Pantry Chef): Handles cold dishes, salads, "
-            "pates, and charcuterie."
-        )
-    ),
-    "Tournant": (1,
-        (
-            "Tournant (Swing Cook): Floats between stations as needed, "
-            "filling in for absent station chefs."
-        )
-    ),
-    "Patissier": (1,
-        (
-            "Pâtissier (Pastry Chef): Prepares pastries, desserts, "
-            "breads, and other baked goods."
-        )
-    ),
-    "Nonce": (1,
-        (
-            "Doesn't do anything. Don't assign any tasks to this team member because "
-            "they will not get done."
-        ))
-
-}
-
-# Backup original descriptions for good scenarios
-original_role_descriptions = kitchen_roles.copy()
-# Define bad descriptions for testing
-bad_role_descriptions = { key: "Generic task performer." for key in kitchen_roles }
 
 def make_agents(llm: LLMWrapper):
     """
@@ -377,6 +272,7 @@ def build_workflow(llm: LLMWrapper, dish: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Kitchen Brigade")
     parser.add_argument("--dish", "-d", required=True)
+    parser.add_argument("--crew", "-c", required=True)
     parser.add_argument("--recipe", "-r", required=False)
     parser.add_argument("--provider", "-p", default="openai")
     parser.add_argument("--model", "-m", default="gpt-4o")
@@ -390,6 +286,19 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     print(f"Invocation command line: {' '.join(sys.argv)}")
+
+    # ------------------------------------------------
+    # 3. Define kitchen brigade agents and the number of each available
+    # ------------------------------------------------
+    with open(args.crew, 'r') as f:
+        kitchen_roles = json.load(f)
+
+    kitchen_roles["Nonce"] = [1,
+        (
+            "Doesn't do anything. Don't assign any tasks to this team member because "
+            "they will not get done."
+        )
+    ]
 
     scenarios = [
         {
@@ -422,6 +331,10 @@ if __name__ == "__main__":
         },
     ]
 
+    # Backup original descriptions for good scenarios
+    original_role_descriptions = kitchen_roles.copy()
+    # Define bad descriptions for testing
+    bad_role_descriptions = { key: "Generic task performer." for key in kitchen_roles }
 
     EMBEDDINGS_FILE = "embeddings.npy"
     INDEX_FILE = "faiss.index"
