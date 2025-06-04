@@ -1,0 +1,65 @@
+Here's a detailed time-step sequence of tasks to prepare the Roast Chicken with Root Vegetables using the roles available:
+
+**T0:**
+- Chef de Cuisine: Review the recipe and assign tasks to the team members.
+- Nonce 1: Gather all ingredients and utensils needed for the preparation.
+
+**T1:**
+- Sous Chef: Rinse the chicken and pat it dry with paper towels.
+- Commis: Mince the garlic cloves on the cutting board using the chef's knife.
+- Entremetier: Rinse and peel the carrots and potatoes.
+
+**T2:**
+- Chef de Partie: Cut the potatoes into cubes using the chef's knife.
+- Garde Manger: Chop the large onion.
+- Cuisinier: Season the inside cavity of the chicken with salt and pepper.
+
+**T3:**
+- Rotisseur: Place the rosemary sprigs and half of the chopped onion inside the chicken cavity.
+- Saucier: Rub the chicken with olive oil and minced garlic.
+- Grillardin: Season the outside of the chicken with more salt and pepper as desired.
+
+**T4:**
+- Entremetier: Cut the carrots at an angle for faster cooking.
+- Plongeur: Line the 9x13-inch roasting pan with aluminum foil.
+
+**T5:**
+- Poissonnier: Scatter the remaining chopped onion in the bottom of the roasting pan.
+- Chef de Partie: Lay the potatoes and carrots in the baking dish around the chicken.
+
+**T6:**
+- Apprenti: Measure and combine balsamic vinegar, red wine, and chicken stock in a mixing bowl.
+- Saucier: Pour the mixture over the chicken and vegetables, ensuring the chicken is well coated.
+
+**T7:**
+- Rotisseur: Add 1/8 cup of water around the edges of the pan.
+
+**T8:**
+- Entremetier: Preheat the oven to 425°F (220°C).
+  
+**T9:**
+- Garde Manger: Cover the baking dish tightly with foil.
+- Tournant: Place the roasting pan in the preheated oven and bake for 40-45 minutes.
+
+**T10 (after 40-45 minutes):**
+- Rotisseur: Remove the foil, baste the chicken with pan juices using the basting brush or spoon.
+- Chef de Cuisine: Monitor the chicken's internal temperature during roasting.
+
+**T11:**
+- Poissonnier: Continue roasting the chicken uncovered for an additional 30-45 minutes or until it reaches an internal temperature of 165°F (74°C).
+
+**T12 (during the last 20 minutes):**
+- Grillardin: Baste the chicken again and sprinkle additional salt and pepper as desired.
+
+**T13 (once chicken is done):**
+- Sous Chef: Remove the baking dish from the oven.
+- Chef de Cuisine: Tent the chicken with foil and let it rest for 10-20 minutes.
+
+**T14:**
+- Cuisinier: Carve the chicken using the chef's knife.
+- Saucier: Drizzle the carved chicken and vegetables with reduced pan juices for extra flavor.
+
+**T15:**
+- Nonce 1: Serve the roast chicken with root vegetables.
+
+The dish is now ready to enjoy!

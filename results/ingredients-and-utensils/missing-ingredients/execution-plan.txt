@@ -1,0 +1,63 @@
+Here is the time-step sequence of tasks to prepare Roast Chicken with Root Vegetables, starting from T0 and incrementing each step by one:
+
+**T0:**
+- Chef de Cuisine 1: Preheat oven to 425°F (220°C).
+- Sous Chef 1: Rinse the chicken and pat dry with paper towels.
+- Garde Manger 1: Chop the large onion.
+- Entremetier 1: Cut the carrots at an angle.
+- Plongeur 1: Gather all utensils and ensure they are clean.
+
+**T1:**
+- Sous Chef 1: Season the inside of the chicken cavity with salt and pepper.
+- Chef de Cuisine 1: Rub minced garlic on the exterior of the chicken.
+- Entremetier 1: Cube the potatoes (not listed as available, will proceed without).
+- Cuisinier 1: Ensure fresh rosemary sprigs are ready for use.
+
+**T2:**
+- Garde Manger 1: Place half of the chopped onion and rosemary sprigs inside the chicken cavity.
+- Rotisseur 1: Rub the chicken with olive oil and season the outside with salt and pepper.
+
+**T3:**
+- Plongeur 1: Line the 9x13-inch baking dish with aluminum foil.
+- Tournant 1: Scatter the remaining chopped onion in the bottom of the baking dish.
+
+**T4:**
+- Entremetier 1: Lay the carrots in the baking dish around the chicken.
+
+**T5:**
+- Saucier 1: In a mixing bowl, combine balsamic vinegar, red wine, and chicken stock.
+- Cuisinier 1: Pour the prepared mixture over the chicken and vegetables.
+
+**T6:**
+- Chef de Partie 1: Add 1/8 cup of water around the edges of the baking dish.
+- Grillardin 1: Cover the baking dish tightly with foil (assume cubed potatoes are already in, since they're operationally mentioned previously but not listed in ingredients).
+
+**T7:**
+- Rotisseur 1: Place the covered baking dish in the preheated oven.
+- Nonce 1: Set a timer for 40-45 minutes for initial roasting.
+
+**T8:**
+- Nonce 1: After the initial 40-45 minutes, carefully remove the baking dish from the oven.
+- Rotisseur 1: Remove the foil and baste the chicken with pan juices using a basting brush or spoon.
+- Plongeur 1: Ensure clean workspace and utensils ready for further use.
+
+**T9:**
+- Rotisseur 1: Return the baking dish, uncovered, to the oven.
+- Nonce 1: Set a timer for an additional 30-45 minutes for continued roasting.
+  
+**T10-13:**
+- Apprenti 1: Periodically check the temperature of the chicken for doneness (internal temperature should reach 165°F/74°C).
+- Nonce 1: During the last 20 minutes, remind Rotisseur 1 to baste again and optionally sprinkle with more salt and pepper for crispy skin.
+
+**T14:**
+- Rotisseur 1: Remove the baking dish from the oven.
+- Nonce 1: Cover the chicken with a foil tent and let rest for 10-20 minutes.
+
+**T15:**
+- Chef de Cuisine 1: Carve the chicken.
+
+**T16:**
+- Patissier 1: Arrange carved chicken pieces and roasted vegetables on a serving platter.
+- Saucier 1: Drizzle with reduced pan juices for extra flavor before serving.
+
+With this sequence, each team member has contributed to the preparation of the Roast Chicken with Root Vegetables using the available ingredients and utensils. Enjoy your meal!

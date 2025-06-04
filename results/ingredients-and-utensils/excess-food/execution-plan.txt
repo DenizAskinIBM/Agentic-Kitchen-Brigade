@@ -1,0 +1,77 @@
+Here's a time-step sequence of tasks to prepare the Roast Chicken with Root Vegetables:
+
+**Time 0 (T0):**
+- **Chef de Cuisine 1:** Review the recipe and assign tasks.
+- **Sous Chef 1:** Gather all ingredients to the prep area.
+- **Saucier 1:** Gather and organize all utensils needed for the recipe.
+- **Chef de Partie 1:** Preheat the oven to 425°F (220°C).
+- **Cuisinier 1:** Gather the three whole chickens and begin removing necks and giblets if needed.
+- **Commis 1:** Wash and dry 12 large potatoes.
+- **Apprenti 1:** Wash and dry 12 large carrots.
+- **Plongeur 1:** Prepare the work area by ensuring it is clean and organized.
+- **Rotisseur 1:** Prepare the 9x13-inch baking dish by lining it with aluminum foil.
+- **Grillardin 1:** Assist in the gathering of ingredients.
+- **Poissonnier 1:** Gather and clean 3 large onions.
+- **Entremetier 1:** Gather 12 garlic cloves and fresh rosemary sprigs.
+- **Garde Manger 1:** Organize the prep space for efficient workflow.
+- **Tournant 1:** Ensure that all necessary items are available and ready for use.
+- **Patissier 1:** Ensure all measuring equipment is available and ready for use.
+
+**Time 1 (T1):**
+- **Cuisinier 1:** Rinse the chickens under cold water and pat dry with paper towels.
+- **Sous Chef 1:** Mince the 12 garlic cloves.
+- **Poissonnier 1:** Chop 3 large onions, divide them into two equal parts.
+- **Apprenti 1:** Cube the 12 large potatoes.
+- **Commis 1:** Cut the 12 large carrots at an angle.
+
+**Time 2 (T2):**
+- **Cuisinier 1:** Rub the exterior of each chicken with minced garlic. Season the inside cavities with salt and pepper.
+- **Sous Chef 1:** Place half of the chopped onions and rosemary sprigs inside each chicken’s cavity.
+- **Chef de Partie 1:** Rub each chicken with olive oil and season the outside with more salt and pepper.
+
+**Time 3 (T3):**
+- **Rotisseur 1:** Scatter the remaining chopped onions on the bottom of the three 9x13-inch baking dishes.
+- **Entremetier 1:** Lay the cubed potatoes and carrot slices around the chickens in the baking dishes.
+
+**Time 4 (T4):**
+- **Saucier 1:** In a mixing bowl, combine the balsamic vinegar, red wine, and chicken stock.
+- **Cuisinier 1:** Pour the vinegar, wine, and stock mixture over the chickens and vegetables in the baking dishes.
+- **Grillardin 1:** Add 1/8 cup of water around the edges of each pan.
+
+**Time 5 (T5):**
+- **Rotisseur 1:** Cover each baking dish tightly with foil.
+- **Apprenti 1:** Place one baking dish in the oven to bake for 40-45 minutes.
+
+**Time 6 (T6):**
+- **Garde Manger 1:** Monitor the oven timer and prepare for the basting process.
+- **Tournant 1:** Prepare basting equipment and ensure the basting area is ready.
+
+**Time 7 (T7) - After 40-45 Minutes:**
+- **Rotisseur 1:** Remove the baking dishes from the oven, take off the foil.
+- **Saucier 1:** Baste each chicken with pan juices.
+- **Apprenti 1:** Return the baking dishes, uncovered, back into the oven and set time for an additional 30-45 minutes.
+
+**Time 8 (T8):**
+- **Plongeur 1:** Prepare a clean area for resting the cooked chickens.
+- **Patissier 1:** Check and prepare serving platters or dishes.
+
+**Time 9 (T9) - During Last 20 Minutes:**
+- **Saucier 1:** Baste the chickens again, sprinkle with additional salt and pepper if desired.
+
+**Time 10 (T10):**
+- **Rotisseur 1:** Monitor the cooking process to ensure chickens reach an internal temperature of 165°F (74°C).
+  
+**Time 11 (T11):**
+- **Entremetier 1:** Remove the dishes from the oven, tent the chickens with foil for resting.
+- **Tournant 1:** Set a timer for resting time (10-20 minutes).
+
+**Time 12 (T12):**
+- **Sous Chef 1:** Carve the chickens.
+- **Chef de Partie 1:** Plate the roasted root vegetables.
+- **Saucier 1:** Drizzle with reduced pan juices before serving.
+- **Nonce 1:** Final inspection, ensure everything is ready for serving.
+  
+**Time 13 (T13):**
+- **Chef de Cuisine 1:** Oversee the serving of Roast Chicken with Root Vegetables. Enjoy!
+
+This sequence allows for the preparation and cooking of three servings of the dish simultaneously, utilizing all team members effectively.

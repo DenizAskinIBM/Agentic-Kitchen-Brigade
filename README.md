@@ -128,9 +128,29 @@ python Kitchen_Brigade.py -d "Grilled Cheese Sandwich" -r results/grilled-cheese
 python Kitchen_Brigade.py -d "Grilled Cheese Sandwich" -r results/grilled-cheese/grilled-cheese-recipe.txt -c results/grilled-cheese/short-order/short-order.json -o results/grilled-cheese/short-order
 ```
 
-*Grilled Cheese Sandwich w/Home Cook
+*Grilled Cheese Sandwich w/Home Cook*
 ```
 python Kitchen_Brigade.py -d "Grilled Cheese Sandwich" -r results/grilled-cheese/grilled-cheese-recipe.txt -c results/grilled-cheese/home-cook/home-cook.json -o results/grilled-cheese/home-cook
+```
+
+*Roast Chicken w/excess ingredients*
+```
+python Kitchen_Brigade_ingredients.py -d "Roast Chicken with Root Vegetables" -r results/ingredients-and-utensils/roast-chicken.txt -c results/ingredients-and-utensils/brigade.json -i results/ingredients-and-utensils/excess-food/resources.txt -o results/ingredients-and-utensils/excess-food
+```
+
+*Roast Chicken w/excess utensils*
+```
+python Kitchen_Brigade_ingredients.py -d "Roast Chicken with Root Vegetables" -r results/ingredients-and-utensils/roast-chicken.txt -c results/ingredients-and-utensils/brigade.json -i results/ingredients-and-utensils/excess-utensils/resources.txt -o results/ingredients-and-utensils/excess-utensils
+```
+
+*Roast Chicken w/missing ingredients*
+```
+python Kitchen_Brigade_ingredients.py -d "Roast Chicken with Root Vegetables" -r results/ingredients-and-utensils/roast-chicken.txt -c results/ingredients-and-utensils/brigade.json -i results/ingredients-and-utensils/missing-ingredients/resources.txt -o results/ingredients-and-utensils/missing-ingredients
+```
+
+*Roast Chicken w/missing utensils*
+```
+python Kitchen_Brigade_ingredients.py -d "Roast Chicken with Root Vegetables" -r results/ingredients-and-utensils/roast-chicken.txt -c results/ingredients-and-utensils/brigade.json -i results/ingredients-and-utensils/missing-utensils/resources.txt -o results/ingredients-and-utensils/missing-utensils
 ```
 
 # Code Structure

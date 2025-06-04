@@ -273,14 +273,15 @@ def build_workflow(llm: LLMWrapper, dish: str):
 # 5. Main entrypoint
 # ------------------------------------------------
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser("Kitchen Brigade")
-   parser.add_argument("--dish", "-d", 
+    parser = argparse.ArgumentParser("Kitchen_Brigade_ingredients")
+    parser.add_argument("--dish", "-d", 
                         required=True,
                         help="The name of the dish to prepare. Used to create a recipe if none is provided.")
     parser.add_argument("--crew", "-c", 
                         required=True,
                         help="File defining the available roles and number of team members in each role.")
-    parser.add_argument("--ingredients", "-i", required=True,
+    parser.add_argument("--ingredients", "-i",
+                        required=True,
                         help="Text file listing the available ingredients and utensils.")
     parser.add_argument("--recipe", "-r", 
                         required=False,
@@ -309,7 +310,8 @@ if __name__ == "__main__":
                        help="File for the output of the Planning Judge. Default: plan-feedback.txt")
     group.add_argument("--execution-feedback", "--ef", 
                        default="execution-feedback.txt",
-                       help="File for the output of the Execution Judge. Default: execution-feedback.txt")    args = parser.parse_args()
+                       help="File for the output of the Execution Judge. Default: execution-feedback.txt")
+    args = parser.parse_args()
 
     print(f"Invocation command line: {' '.join(sys.argv)}")
 
