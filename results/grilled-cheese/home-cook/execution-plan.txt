@@ -1,0 +1,35 @@
+Here's a time-step sequence of tasks for preparing the Grilled Cheese with a Kick, distributed between the Home Cook and the Nonce:
+
+### T0
+- **Home Cook 1**: Clean all utensils and surfaces. Gather all ingredients and tools needed for the recipe. 
+- **Nonce 1**: Ensure the bread, cheese, and butter are at appropriate temperatures for easy handling.
+
+### T1
+- **Home Cook 1**: Lightly spread butter on one side of each bread slice. Sprinkle a pinch of cayenne pepper and a dash of garlic powder over the buttered side.
+- **Nonce 1**: Place a slice of cheese on the unbuttered side of two bread slices. If desired, splash a few drops of beer onto the cheese.
+
+### T2
+- **Home Cook 1**: Top each slice of cheese with the remaining bread slices, ensuring the buttered side is facing out.
+- **Nonce 1**: Heat a heavy cast iron skillet or non-stick pan over medium-low heat.
+
+### T3
+- **Home Cook 1**: Place the assembled sandwiches in the skillet. Press down gently with a spatula for even cooking, then cover with a lid or another heavy pan to simulate a panini press.
+
+### T4
+- **Nonce 1**: Cook until the bread is golden brown and the cheese begins to melt, about 2-3 minutes per side. Carefully flip the sandwiches, pressing down gently.
+
+### T5
+- **Home Cook 1**: Add an extra slice of cheese on top of each sandwich if desired. Cover again and allow the cheese to melt for another 2 minutes.
+
+### T6
+- **Nonce 1**: Carefully remove the sandwiches from the skillet and place them on a cutting board. Allow them to cool slightly for about a minute.
+
+### T7
+- **Home Cook 1**: Cut each sandwich in half and arrange them on plates.
+- **Nonce 1**: Prepare any sides, like a small salad or pour a bowl of tomato soup, to complement the sandwiches.
+
+### T8
+- **Home Cook 1**: Perform a final quality check on presentation before serving.
+- **Nonce 1**: Clean all used utensils and surfaces. Store any remaining ingredients appropriately.
+
+Each task is assigned to the Home Cook 1 or Nonce 1 based on their ability to complete it successfully given their roles, with some tasks being flexible.

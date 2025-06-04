@@ -1,0 +1,65 @@
+Below is a time-step sequence of tasks to prepare the Grilled Cheese Sandwich with a Kick:
+
+### Time-Step Sequence
+
+#### T0:
+- **Head Chef 1**: Review the recipe and ensure all team members understand their roles.
+- **Chef 1**: Gather all ingredients: sliced bread, cheese slices, unsalted butter, cayenne pepper, garlic powder, and beer (optional).
+- **Chef 2**: Gather all tools and utensils: heavy cast iron skillet or non-stick pan, spatula, lid or heavy pan, cutting board, and knife.
+- **Nonce 1**: Ensure all utensils and work surfaces are clean.
+
+#### T1:
+- **Head Chef 1**: Inspect and verify all ingredients and tools are gathered and ready.
+- **Chef 1**: Allow butter to soften slightly if needed for easy spreading.
+- **Chef 2**: Set up the workstation with a cutting board and knife prepared.
+
+#### T2:
+- **Chef 1**: Butter one side of each bread slice and sprinkle cayenne pepper and garlic powder on the buttered side.
+- **Nonce 1**: Ensure bread and cheese are at appropriate temperatures for handling.
+
+#### T3:
+- **Chef 2**: Place a slice of cheese on the unbuttered side of two bread slices and add a few drops of beer if desired.
+- **Nonce 1**: Top each cheese slice with another bread slice, buttered side facing out.
+
+#### T4:
+- **Head Chef 1**: Oversee and verify the proper assembly of sandwiches.
+- **Chef 1**: Heat the heavy cast iron skillet or non-stick pan over medium-low heat.
+
+#### T5:
+- **Chef 2**: Place the assembled sandwiches in the skillet and press down gently with a spatula.
+- **Nonce 1**: Cover sandwiches with a lid or another heavy pan to simulate a panini press.
+
+#### T6:
+- **Chef 1**: Cook until bread is golden brown and cheese begins to melt, about 2-3 minutes per side.
+
+#### T7:
+- **Chef 2**: Carefully flip the sandwiches, pressing down gently and optionally adding an extra slice of cheese on top.
+- **Nonce 1**: Continue monitoring the skillet, cover sandwiches again, and allow cheese to melt for another 2 minutes.
+
+#### T8:
+- **Head Chef 1**: Verify cooking completion and readiness for plating.
+
+#### T9:
+- **Chef 1**: Carefully remove sandwiches from the skillet and transfer them to the cutting board.
+- **Chef 2**: Allow sandwiches to cool slightly for about a minute.
+
+#### T10:
+- **Nonce 1**: Cut each sandwich in half and arrange them neatly on plates.
+
+#### T11:
+- **Head Chef 1**: Inspect the final presentation and perform quality check.
+- **Chef 1**: Prepare any sides, like a small salad or a bowl of tomato soup, if desired.
+
+#### T12:
+- **Chef 2**: Serve the sandwiches with the prepared sides.
+
+#### T13:
+- **Nonce 1**: Begin cleaning all used utensils and surfaces.
+
+#### T14:
+- **Chef 1**: Store any remaining ingredients appropriately.
+
+#### T15:
+- **Head Chef 1**: Review overall process and provide feedback to team members. 
+
+Enjoy the delicious grilled cheese sandwiches with a spicy kick!

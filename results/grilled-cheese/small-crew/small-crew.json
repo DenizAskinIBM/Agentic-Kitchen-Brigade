@@ -1,0 +1,10 @@
+{
+  "Head Chef": [
+    1,
+    "Oversees all kitchen operations, creates menus, supervises staff members, prepares and cooks food items, and ensures the quality of finished dishes."
+  ],
+  "Chef": [
+    2,
+    "General chef that performs all types of food preparation, cooking, and assembly tasks."
+  ]
+}

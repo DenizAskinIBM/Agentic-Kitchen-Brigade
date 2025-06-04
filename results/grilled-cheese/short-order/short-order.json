@@ -1,0 +1,10 @@
+{
+  "Short Order Cook": [
+    1,
+    "Performs all food preparation, cooking, and meal assembly tasks."
+  ],
+  "Server": [
+    1,
+    "Assists with final meal preparation and presentation tasks such as adding garnishes and side items such as cold salads and soups to meals."
+  ]
+}

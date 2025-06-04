@@ -1,0 +1,37 @@
+Here's a time-step sequence of tasks for preparing the Grilled Cheese with a Kick, using the designated roles:
+
+**T0:**
+- Short Order Cook 1: Ensure all utensils and surfaces are clean. Gather all ingredients and tools needed for the recipe.
+- Nonce 1: Ensure the bread, cheese, and butter are at appropriate temperatures for easy handling.
+
+**T1:**
+- Short Order Cook 1: Lightly spread butter on one side of each bread slice. Sprinkle cayenne pepper and garlic powder over the buttered side.
+- Nonce 1: Place a slice of cheese on the unbuttered side of two bread slices. If desired, splash a few drops of beer onto the cheese.
+
+**T2:**
+- Nonce 1: Top each slice of cheese with the remaining bread slices, ensuring the buttered side is facing out.
+
+**T3:**
+- Short Order Cook 1: Heat a heavy cast iron skillet or non-stick pan over medium-low heat.
+- Server 1: Stand by and prepare any sides, like a small salad or prepare tomato soup, to complement the sandwiches.
+
+**T4:**
+- Short Order Cook 1: Place the assembled sandwiches in the skillet, press down gently with a spatula, and cover with a lid or another heavy pan.
+
+**T5:**
+- Short Order Cook 1: Cook until the bread is golden brown and cheese begins to melt, about 2-3 minutes per side. Flip the sandwiches and press gently.
+
+**T6:**
+- Short Order Cook 1: Add an extra slice of cheese on top of each sandwich if desired. Cover and allow the cheese to melt for another 2 minutes.
+
+**T7:**
+- Short Order Cook 1: Carefully remove the sandwiches from the skillet and place them on a cutting board. Allow them to cool slightly for about a minute.
+
+**T8:**
+- Nonce 1: Cut each sandwich in half and arrange them on plates.
+
+**T9:**
+- Server 1: Perform a final quality check on presentation before serving.
+- Nonce 1: Clean all used utensils and surfaces. Store any remaining ingredients appropriately.
+
+Enjoy your spicy, flavorful Grilled Cheese with a Kick!
