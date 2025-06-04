@@ -104,6 +104,35 @@ Output files:
                         execution-feedback.txt
 ```
 
+# Replicating Results
+
+Looking to replicate our results from our [series of Medium articles](https://medium.com/@cwkirby/are-generative-models-good-planners-part-i-e20bf381f362)? Here are the command lines to do that. All assume you are invoking the script from the root of the repository and running with an appropriately configured virtual environment.
+
+*Baseline*
+```
+python Kitchen_Brigade.py -d "Roast Chicken with Root Vegetables" -r results/baseline/generated-recipe.txt -c results/baseline/brigade.json -o results/baseline
+```
+
+*Grilled Cheese Sandwich w/Brigade*
+```
+python Kitchen_Brigade.py -d "Grilled Cheese Sandwich" -r results/grilled-cheese/grilled-cheese-recipe.txt -c results/grilled-cheese/brigade/brigade.json -o results/grilled-cheese/brigade
+```
+
+*Grilled Cheese Sandwich w/Small Crew*
+```
+python Kitchen_Brigade.py -d "Grilled Cheese Sandwich" -r results/grilled-cheese/grilled-cheese-recipe.txt -c results/grilled-cheese/small-crew/small-crew.json -o results/grilled-cheese/small-crew
+```
+
+*Grilled Cheese Sandwich w/Short Order Cook*
+```
+python Kitchen_Brigade.py -d "Grilled Cheese Sandwich" -r results/grilled-cheese/grilled-cheese-recipe.txt -c results/grilled-cheese/short-order/short-order.json -o results/grilled-cheese/short-order
+```
+
+*Grilled Cheese Sandwich w/Home Cook
+```
+python Kitchen_Brigade.py -d "Grilled Cheese Sandwich" -r results/grilled-cheese/grilled-cheese-recipe.txt -c results/grilled-cheese/home-cook/home-cook.json -o results/grilled-cheese/home-cook
+```
+
 # Code Structure
 
 - kitchen_brigade.py: Main entry point
